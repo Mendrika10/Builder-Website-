@@ -1,0 +1,481 @@
+// ============================================================
+//  SaaS Website Builder — Prisma Schema
+//  Provider : MySQL
+//  Adapté depuis le MCD Merise (PostgreSQL → MySQL)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+//  ENUMS
+// ============================================================
+
+enum Role {
+  client
+  admin
+  support
+}
+
+enum SupportNiveau {
+  email
+  chat
+  prioritaire
+}
+
+enum StatutAbonnement {
+  actif
+  suspendu
+  annule
+  expire
+  essai
+}
+
+enum Periodicite {
+  mensuel
+  annuel
+}
+
+enum MethodePaiement {
+  carte
+  virement
+  paypal
+  stripe
+}
+
+enum StatutPaiement {
+  en_attente
+  reussi
+  echoue
+  rembourse
+}
+
+enum StatutSite {
+  brouillon
+  publie
+  suspendu
+  archive
+}
+
+enum TypePage {
+  standard
+  accueil
+  contact
+  blog
+  landing
+}
+
+enum StatutDns {
+  en_attente
+  verifie
+  erreur
+  expire
+}
+
+// ============================================================
+//  1. PLAN
+// ============================================================
+
+model Plan {
+  id             String        @id @default(uuid()) @db.VarChar(36) @map("id_plan")
+  nom            String        @unique @db.VarChar(50)
+  prixMensuel    Decimal       @default(0) @db.Decimal(8, 2) @map("prix_mensuel")
+  prixAnnuel     Decimal       @default(0) @db.Decimal(8, 2) @map("prix_annuel")
+  maxSites       Int           @default(1) @db.SmallInt @map("max_sites")
+  maxPages       Int           @default(5) @db.SmallInt @map("max_pages")
+  stockageGo     Int           @default(1) @db.SmallInt @map("stockage_go")
+  domainePerso   Boolean       @default(false) @map("domaine_perso")
+  sslInclus      Boolean       @default(false) @map("ssl_inclus")
+  analytics      Boolean       @default(false)
+  removeBranding Boolean       @default(false) @map("remove_branding")
+  supportNiveau  SupportNiveau @default(email) @map("support_niveau")
+  estActif       Boolean       @default(true) @map("est_actif")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  utilisateurs Utilisateur[]
+  abonnements  Abonnement[]
+
+  @@map("plan")
+}
+
+// ============================================================
+//  2. UTILISATEUR
+// ============================================================
+
+model Utilisateur {
+  id             String    @id @default(uuid()) @db.VarChar(36) @map("id_utilisateur")
+  idPlan         String?   @db.VarChar(36) @map("id_plan")
+  nom            String    @db.VarChar(100)
+  email          String    @unique @db.VarChar(255)
+  motDePasse     String    @db.Text @map("mot_de_passe")
+  role           Role      @default(client)
+  langue         String    @default("fr") @db.VarChar(10)
+  emailVerifie   Boolean   @default(false) @map("email_verifie")
+  emailVerifieAt DateTime? @map("email_verifie_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  plan        Plan?        @relation(fields: [idPlan], references: [id], onDelete: SetNull)
+  abonnements Abonnement[]
+  sites       Site[]
+  medias      Media[]
+  emailVerifications EmailVerification[]
+
+  @@index([email])
+  @@index([idPlan])
+  @@map("utilisateur")
+}
+
+model EmailVerification {
+  id             String      @id @default(cuid()) @db.VarChar(25) @map("id_email_verification")
+  idUtilisateur  String      @db.VarChar(36) @map("id_utilisateur")
+  code           String      @db.VarChar(10)
+  expiresAt      DateTime    @map("expires_at")
+  isValidated    Boolean     @default(false) @map("is_validated")
+  countAttempts  Int         @default(0) @map("count_attempts")
+  codeBlocked    Boolean     @default(false) @map("code_blocked")
+  blockedUntil   DateTime?   @map("blocked_until")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  utilisateur Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+
+  @@index([idUtilisateur])
+  @@map("email_verification")
+}
+
+// ============================================================
+//  3. ABONNEMENT
+// ============================================================
+
+model Abonnement {
+  id                 String           @id @default(uuid()) @db.VarChar(36) @map("id_abonnement")
+  idUtilisateur      String           @db.VarChar(36) @map("id_utilisateur")
+  idPlan             String           @db.VarChar(36) @map("id_plan")
+  statut             StatutAbonnement @default(actif)
+  stripeSubId        String?          @unique @db.VarChar(100) @map("stripe_sub_id")
+  dateDebut          DateTime         @default(now()) @db.Date @map("date_debut")
+  dateFin            DateTime?        @db.Date @map("date_fin")
+  periodicite        Periodicite      @default(mensuel)
+  renouvellementAuto Boolean          @default(true) @map("renouvellement_auto")
+  createdAt          DateTime         @default(now()) @map("created_at")
+
+  utilisateur Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+  plan        Plan        @relation(fields: [idPlan], references: [id], onDelete: Restrict)
+  paiements   Paiement[]
+
+  @@index([idUtilisateur])
+  @@index([statut])
+  @@index([dateFin])
+  @@map("abonnement")
+}
+
+// ============================================================
+//  4. PAIEMENT
+// ============================================================
+
+model Paiement {
+  id           String          @id @default(uuid()) @db.VarChar(36) @map("id_paiement")
+  idAbonnement String          @db.VarChar(36) @map("id_abonnement")
+  montant      Decimal         @db.Decimal(10, 2)
+  devise       String          @default("EUR") @db.Char(3)
+  methode      MethodePaiement @default(carte)
+  stripePiId   String?         @unique @db.VarChar(100) @map("stripe_pi_id")
+  statut       StatutPaiement  @default(en_attente)
+  datePaiement DateTime        @default(now()) @map("date_paiement")
+
+  abonnement Abonnement @relation(fields: [idAbonnement], references: [id], onDelete: Cascade)
+
+  @@index([idAbonnement])
+  @@index([statut])
+  @@map("paiement")
+}
+
+// ============================================================
+//  5. CATEGORIE_MODELE
+// ============================================================
+
+model CategorieModele {
+  id    String  @id @default(uuid()) @db.VarChar(36) @map("id_categorie")
+  nom   String  @unique @db.VarChar(80)
+  icone String? @db.VarChar(50)
+  ordre Int     @default(0) @db.SmallInt
+
+  modeles Modele[]
+
+  @@map("categorie_modele")
+}
+
+// ============================================================
+//  6. MODELE
+// ============================================================
+
+model Modele {
+  id             String   @id @default(uuid()) @db.VarChar(36) @map("id_modele")
+  idCategorie    String?  @db.VarChar(36) @map("id_categorie")
+  nom            String   @db.VarChar(100)
+  description    String?  @db.Text
+  apercuUrl      String?  @db.Text @map("apercu_url")
+  secteur        String?  @db.VarChar(80)
+  estPremium     Boolean  @default(false) @map("est_premium")
+  nbUtilisations Int      @default(0) @map("nb_utilisations")
+  configDefaut   Json     @default("{}") @map("config_defaut")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  categorie CategorieModele? @relation(fields: [idCategorie], references: [id], onDelete: SetNull)
+  sites     Site[]
+
+  @@map("modele")
+}
+
+// ============================================================
+//  7. SITE
+// ============================================================
+
+model Site {
+  id              String     @id @default(uuid()) @db.VarChar(36) @map("id_site")
+  idUtilisateur   String     @db.VarChar(36) @map("id_utilisateur")
+  idModele        String?    @db.VarChar(36) @map("id_modele")
+  nom             String     @db.VarChar(120)
+  slug            String     @unique @db.VarChar(120)
+  domainePerso    String?    @unique @db.VarChar(253) @map("domaine_perso")
+  sslActif        Boolean    @default(false) @map("ssl_actif")
+  statut          StatutSite @default(brouillon)
+  langueDefaut    String     @default("fr") @db.VarChar(10) @map("langue_defaut")
+  metaSeo         Json       @default("{}") @map("meta_seo")
+  parametres      Json       @default("{}")
+  datePublication DateTime?  @map("date_publication")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  utilisateur      Utilisateur      @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+  modele           Modele?          @relation(fields: [idModele], references: [id], onDelete: SetNull)
+  themes           Theme[]
+  pages            Page[]
+  medias           Media[]
+  domaines         Domaine[]
+  formulaires      Formulaire[]
+  analytiques      Analytique[]
+  navigationImages NavigationImage[]  // ← AJOUT : relation inverse
+
+  @@index([idUtilisateur])
+  @@index([slug])
+  @@index([statut])
+  @@index([idModele])
+  @@map("site")
+}
+
+// ============================================================
+//  8. THEME
+// ============================================================
+
+model Theme {
+  id              String   @id @default(uuid()) @db.VarChar(36) @map("id_theme")
+  idSite          String   @db.VarChar(36) @map("id_site")
+  nom             String   @db.VarChar(80)
+  paletteCouleurs Json     @default("{}") @map("palette_couleurs")
+  typographie     Json     @default("{}")
+  espacement      Json     @default("{}")
+  arrondi         Json     @default("{}")
+  ombres          Json     @default("{}")
+  estActif        Boolean  @default(true) @map("est_actif")
+
+  site Site @relation(fields: [idSite], references: [id], onDelete: Cascade)
+
+  @@index([idSite])
+  @@map("theme")
+}
+
+// ============================================================
+//  9. PAGE
+// ============================================================
+
+model Page {
+  id         String   @id @default(uuid()) @db.VarChar(36) @map("id_page")
+  idSite     String   @db.VarChar(36) @map("id_site")
+  titre      String   @db.VarChar(200)
+  slug       String   @db.VarChar(200)
+  type       TypePage @default(standard)
+  estAccueil Boolean  @default(false) @map("est_accueil")
+  estPubliee Boolean  @default(false) @map("est_publiee")
+  metaSeo    Json     @default("{}") @map("meta_seo")
+  ordre      Int      @default(0) @db.SmallInt
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  site     Site      @relation(fields: [idSite], references: [id], onDelete: Cascade)
+  sections Section[]
+
+  @@unique([idSite, slug])
+  @@index([idSite])
+  @@index([idSite, ordre])
+  @@map("page")
+}
+
+// ============================================================
+//  10. BLOC
+// ============================================================
+
+model Bloc {
+  id           String   @id @default(uuid()) @db.VarChar(36) @map("id_bloc")
+  nom          String   @db.VarChar(100)
+  type         String   @db.VarChar(50)
+  categorie    String   @db.VarChar(50)
+  configDefaut Json     @default("{}") @map("config_defaut")
+  apercuUrl    String?  @db.Text @map("apercu_url")
+  estPremium   Boolean  @default(false) @map("est_premium")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  sections Section[]
+
+  @@map("bloc")
+}
+
+// ============================================================
+//  11. SECTION
+// ============================================================
+
+model Section {
+  id         String   @id @default(uuid()) @db.VarChar(36) @map("id_section")
+  idPage     String   @db.VarChar(36) @map("id_page")
+  idBloc     String   @db.VarChar(36) @map("id_bloc")
+  ordre      Int      @default(0) @db.SmallInt
+  contenu    Json     @default("{}")
+  style      Json     @default("{}")
+  estVisible Boolean  @default(true) @map("est_visible")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  page Page @relation(fields: [idPage], references: [id], onDelete: Cascade)
+  bloc Bloc @relation(fields: [idBloc], references: [id], onDelete: Restrict)
+
+  @@index([idPage])
+  @@index([idPage, ordre])
+  @@map("section")
+}
+
+// ============================================================
+//  12. MEDIA
+// ============================================================
+
+model Media {
+  id            String   @id @default(uuid()) @db.VarChar(36) @map("id_media")
+  idSite        String   @db.VarChar(36) @map("id_site")
+  idUtilisateur String   @db.VarChar(36) @map("id_utilisateur")
+  nom           String   @db.VarChar(255)
+  typeMime      String   @db.VarChar(100) @map("type_mime")
+  url           String   @db.Text
+  urlMiniature  String?  @db.Text @map("url_miniature")
+  tailleOctets  Int      @map("taille_octets")
+  largeur       Int?     @db.SmallInt
+  hauteur       Int?     @db.SmallInt
+  altText       String?  @db.VarChar(300) @map("alt_text")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  site        Site        @relation(fields: [idSite], references: [id], onDelete: Cascade)
+  utilisateur Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+
+  @@index([idSite])
+  @@index([typeMime])
+  @@map("media")
+}
+
+// Images spécifiques à la navigation (logo, etc.)
+model NavigationImage {
+  id        String   @id @default(uuid()) @db.VarChar(36) @map("id_navigation_image")
+  idSite    String   @db.VarChar(36) @map("id_site")
+  filename  String   @db.VarChar(255)
+  typeMime  String   @db.VarChar(100) @map("type_mime")
+  url       String   @db.Text
+  size      Int      @map("taille_octets")
+  width     Int?     @db.SmallInt
+  height    Int?     @db.SmallInt
+  createdAt DateTime @default(now()) @map("created_at")
+
+  site Site @relation(fields: [idSite], references: [id], onDelete: Cascade)
+
+  @@index([idSite])
+  @@map("navigation_img")
+}
+
+// ============================================================
+//  13. DOMAINE
+// ============================================================
+
+model Domaine {
+  id         String    @id @default(uuid()) @db.VarChar(36) @map("id_domaine")
+  idSite     String    @db.VarChar(36) @map("id_site")
+  nomDomaine String    @unique @db.VarChar(253) @map("nom_domaine")
+  statutDns  StatutDns @default(en_attente) @map("statut_dns")
+  sslActif   Boolean   @default(false) @map("ssl_actif")
+  dateVerif  DateTime? @map("date_verif")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  site Site @relation(fields: [idSite], references: [id], onDelete: Cascade)
+
+  @@map("domaine")
+}
+
+// ============================================================
+//  14. FORMULAIRE
+// ============================================================
+
+model Formulaire {
+  id                String   @id @default(uuid()) @db.VarChar(36) @map("id_formulaire")
+  idSite            String   @db.VarChar(36) @map("id_site")
+  nom               String   @db.VarChar(120)
+  champs            Json     @default("[]")
+  emailDestinataire String   @db.VarChar(255) @map("email_destinataire")
+  estActif          Boolean  @default(true) @map("est_actif")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  site        Site         @relation(fields: [idSite], references: [id], onDelete: Cascade)
+  soumissions Soumission[]
+
+  @@map("formulaire")
+}
+
+// ============================================================
+//  15. SOUMISSION
+// ============================================================
+
+model Soumission {
+  id             String   @id @default(uuid()) @db.VarChar(36) @map("id_soumission")
+  idFormulaire   String   @db.VarChar(36) @map("id_formulaire")
+  donnees        Json     @default("{}")
+  ip             String?  @db.VarChar(45)
+  dateSoumission DateTime @default(now()) @map("date_soumission")
+
+  formulaire Formulaire @relation(fields: [idFormulaire], references: [id], onDelete: Cascade)
+
+  @@index([idFormulaire])
+  @@index([dateSoumission])
+  @@map("soumission")
+}
+
+// ============================================================
+//  16. ANALYTIQUE
+// ============================================================
+
+model Analytique {
+  id               String   @id @default(uuid()) @db.VarChar(36) @map("id_analytique")
+  idSite           String   @db.VarChar(36) @map("id_site")
+  date             DateTime @db.Date
+  visites          Int      @default(0)
+  visiteursUniques Int      @default(0) @map("visiteurs_uniques")
+  pagesVues        Int      @default(0) @map("pages_vues")
+  tauxRebond       Decimal? @db.Decimal(5, 2) @map("taux_rebond")
+  dureeMoyenne     Decimal? @db.Decimal(8, 2) @map("duree_moyenne")
+  sourcesTrafic    Json     @default("{}") @map("sources_trafic")
+  pays             Json     @default("{}")
+  pagesPopulaires  Json     @default("{}") @map("pages_populaires")
+
+  site Site @relation(fields: [idSite], references: [id], onDelete: Cascade)
+
+  @@unique([idSite, date])
+  @@index([idSite, date(sort: Desc)])
+  @@map("analytique")
+}
