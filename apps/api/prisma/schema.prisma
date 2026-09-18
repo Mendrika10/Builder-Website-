@@ -1,0 +1,183 @@
+// ============================================================
+//  Site.mg — Schéma Prisma (apps/api)
+//  FOND-020 : noyau Sprint 01 (user, email_verification,
+//  plan, subscription, site). Le MCD complet (16 tables) est
+//  documenté dans docs/architecture/database.md ; les tables
+//  suivantes seront ajoutées par migration dans les sprints
+//  ultérieurs (paiement, modele, page, section, media...).
+//  Conventions : docs/architecture/database.md
+//  (snake_case, UUID, enums PostgreSQL, index sur les FK).
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+  // Client isolé dans l'app : le client par défaut (node_modules/.prisma)
+  // reste celui de la v1 MySQL (ADR-001) — les deux coexistent (FOND-020).
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+//  ENUMS
+// ============================================================
+
+enum Role {
+  client
+  admin
+  support
+}
+
+enum SupportNiveau {
+  email
+  chat
+  prioritaire
+}
+
+enum StatutAbonnement {
+  essai
+  actif
+  suspendu
+  annule
+  expire
+}
+
+enum Periodicite {
+  mensuel
+  annuel
+}
+
+enum StatutSite {
+  brouillon
+  publie
+  suspendu
+  archive
+}
+
+// ============================================================
+//  1. PLAN — quotas et tarifs des offres (seed FOND-021)
+// ============================================================
+
+model Plan {
+  id             String        @id @default(uuid()) @db.Uuid
+  nom            String        @unique @db.VarChar(50)
+  prixMensuel    Decimal       @default(0) @db.Decimal(8, 2) @map("prix_mensuel")
+  prixAnnuel     Decimal       @default(0) @db.Decimal(8, 2) @map("prix_annuel")
+  maxSites       Int           @default(1) @db.SmallInt @map("max_sites")
+  maxPages       Int           @default(5) @db.SmallInt @map("max_pages")
+  stockageGo     Int           @default(1) @db.SmallInt @map("stockage_go")
+  domainePerso   Boolean       @default(false) @map("domaine_perso")
+  sslInclus      Boolean       @default(false) @map("ssl_inclus")
+  analytics      Boolean       @default(false)
+  removeBranding Boolean       @default(false) @map("remove_branding")
+  supportNiveau  SupportNiveau @default(email) @map("support_niveau")
+  estActif       Boolean       @default(true) @map("est_actif")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  utilisateurs Utilisateur[]
+  abonnements  Abonnement[]
+
+  @@map("plan")
+}
+
+// ============================================================
+//  2. UTILISATEUR — table `user`
+// ============================================================
+
+model Utilisateur {
+  id             String    @id @default(uuid()) @db.Uuid
+  idPlan         String?   @db.Uuid @map("id_plan")
+  nom            String    @db.VarChar(100)
+  email          String    @unique @db.VarChar(255)
+  motDePasse     String    @db.Text @map("mot_de_passe")
+  role           Role      @default(client)
+  langue         String    @default("fr") @db.VarChar(10)
+  emailVerifie   Boolean   @default(false) @map("email_verifie")
+  emailVerifieAt DateTime? @map("email_verifie_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  plan               Plan?               @relation(fields: [idPlan], references: [id], onDelete: SetNull)
+  abonnements        Abonnement[]
+  sites              Site[]
+  emailVerifications EmailVerification[]
+
+  @@index([idPlan])
+  @@map("user")
+}
+
+// ============================================================
+//  3. EMAIL_VERIFICATION — code à 6 chiffres (US-093)
+// ============================================================
+
+model EmailVerification {
+  id            String    @id @default(uuid()) @db.Uuid
+  idUtilisateur String    @db.Uuid @map("id_utilisateur")
+  code          String    @db.VarChar(10)
+  expiresAt     DateTime  @map("expires_at")
+  isValidated   Boolean   @default(false) @map("is_validated")
+  countAttempts Int       @default(0) @map("count_attempts")
+  codeBlocked   Boolean   @default(false) @map("code_blocked")
+  blockedUntil  DateTime? @map("blocked_until")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  utilisateur Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+
+  @@index([idUtilisateur])
+  @@map("email_verification")
+}
+
+// ============================================================
+//  4. SUBSCRIPTION — abonnement utilisateur → plan
+// ============================================================
+
+model Abonnement {
+  id                 String           @id @default(uuid()) @db.Uuid
+  idUtilisateur      String           @db.Uuid @map("id_utilisateur")
+  idPlan             String           @db.Uuid @map("id_plan")
+  statut             StatutAbonnement @default(actif)
+  stripeSubId        String?          @unique @db.VarChar(100) @map("stripe_sub_id")
+  dateDebut          DateTime         @default(now()) @db.Date @map("date_debut")
+  dateFin            DateTime?        @db.Date @map("date_fin")
+  periodicite        Periodicite      @default(mensuel)
+  renouvellementAuto Boolean          @default(true) @map("renouvellement_auto")
+  createdAt          DateTime         @default(now()) @map("created_at")
+
+  utilisateur Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+  plan        Plan        @relation(fields: [idPlan], references: [id], onDelete: Restrict)
+
+  @@index([idUtilisateur])
+  @@index([idPlan])
+  @@index([statut])
+  @@index([dateFin])
+  @@map("subscription")
+}
+
+// ============================================================
+//  5. SITE — site créé par un utilisateur
+// ============================================================
+
+model Site {
+  id              String     @id @default(uuid()) @db.Uuid
+  idUtilisateur   String     @db.Uuid @map("id_utilisateur")
+  nom             String     @db.VarChar(120)
+  slug            String     @unique @db.VarChar(120)
+  domainePerso    String?    @unique @db.VarChar(253) @map("domaine_perso")
+  sslActif        Boolean    @default(false) @map("ssl_actif")
+  statut          StatutSite @default(brouillon)
+  langueDefaut    String     @default("fr") @db.VarChar(10) @map("langue_defaut")
+  metaSeo         Json       @default("{}") @map("meta_seo")
+  parametres      Json       @default("{}")
+  datePublication DateTime?  @map("date_publication")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  utilisateur Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+
+  @@index([idUtilisateur])
+  @@index([statut])
+  @@map("site")
+}
