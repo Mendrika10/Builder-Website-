@@ -163,4 +163,114 @@ describe("Pages + publication (e2e, PAGE-004)", () => {
       .expect(200);
     expect(list.body).toHaveLength(0);
   });
+
+  it("PAGE-011 : quota max_pages (Gratuit = 5) → 6e page 403 avec message plan", async () => {
+    // Le site du run a 0 page : on en crée 5 puis la 6e doit être refusée
+    for (let i = 1; i <= 5; i++) {
+      await request(app.getHttpServer())
+        .post(`/sites/${siteId}/pages`)
+        .set("Authorization", `Bearer ${tokenA}`)
+        .send({ titre: `Page ${i} ${runId}` })
+        .expect(201);
+    }
+    const res = await request(app.getHttpServer())
+      .post(`/sites/${siteId}/pages`)
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({ titre: "Page en trop" })
+      .expect(403);
+    expect(String(res.body.message)).toContain("Gratuit");
+  });
+});
+
+describe("Pages — quota, page publique et sanitization (e2e, PAGE-013/BLOC-001)", () => {
+  /* second describe : site vierge pour les tests quota/public/sanitization */
+  let app: INestApplication;
+  const prisma = new PrismaClient();
+  let tokenA: string;
+  let siteId: string;
+
+  const verifiedUser = async (email: string): Promise<string> => {
+    await request(app.getHttpServer())
+      .post("/auth/register")
+      .send({ nom: "Pages Runner 2", email, motDePasse: PASSWORD })
+      .expect(201);
+    const rows = await prisma.$queryRaw<{ code: string }[]>`
+      SELECT ev.code FROM email_verification ev
+      JOIN "user" u ON u.id = ev.id_utilisateur
+      WHERE u.email = ${email} AND ev.is_validated = false
+      ORDER BY ev.created_at DESC LIMIT 1`;
+    await request(app.getHttpServer())
+      .post("/auth/verify")
+      .send({ email, code: rows[0].code })
+      .expect(200);
+    const login = await request(app.getHttpServer())
+      .post("/auth/login")
+      .send({ email, motDePasse: PASSWORD })
+      .expect(200);
+    return login.body.accessToken as string;
+  };
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    app = moduleRef.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
+    await app.init();
+    await prisma.$connect();
+    tokenA = await verifiedUser(`pages2.${runId}@test.mg`);
+    // L'utilisateur A a déjà un site du 1er describe ? Non : nouveau user → nouveau site
+    const site = await request(app.getHttpServer())
+      .post("/sites")
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({ nom: `Site Multipage ${runId}` })
+      .expect(201);
+    siteId = site.body.id;
+  });
+
+  afterAll(async () => {
+    await app.close();
+    await prisma.$disconnect();
+  });
+
+  it("BLOC-001 : blocs image/contact/horaires — URL invalide rejetée, champs bornés acceptés", async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/sites/${siteId}/pages`)
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({
+        titre: "Infos",
+        contenu: [
+          { type: "image", url: "javascript:alert(1)", alt: "tentative" },
+          { type: "image", url: "https://exemple.mg/photo.jpg", alt: "La salle" },
+          { type: "contact", telephone: "+261 34 00 000 00", email: "bonjour@exemple.mg", adresse: "Tana" },
+          { type: "horaires", titre: "Horaires", horaires: "Lun–Ven 9h–18h" },
+        ],
+      })
+      .expect(201);
+    const contenu = res.body.contenu as { type: string; url?: string }[];
+    // L'image avec URL non http(s) est ignorée ; les 3 autres blocs passent
+    expect(contenu).toHaveLength(3);
+    expect(contenu[0].url).toBe("https://exemple.mg/photo.jpg");
+  });
+
+  it("PAGE-013 : page publique précise → 200 avec son contenu ; absente → 404", async () => {
+    const contact = await request(app.getHttpServer())
+      .post(`/sites/${siteId}/pages`)
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({ titre: "Contact", contenu: [{ type: "contact", email: "a@b.mg" }] })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/sites/${siteId}/publish`)
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({})
+      .expect(200);
+
+    const one = await request(app.getHttpServer())
+      .get(`/public/sites/site-multipage-${runId}/pages/${contact.body.slug}`)
+      .expect(200);
+    expect(one.body.page.titre).toBe("Contact");
+
+    await request(app.getHttpServer())
+      .get(`/public/sites/site-multipage-${runId}/pages/inexistant`)
+      .expect(404);
+  });
 });

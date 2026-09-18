@@ -65,4 +65,11 @@ export class PagesController {
   getPublicSite(@Param("slug") slug: string) {
     return this.pagesService.getPublicSite(slug);
   }
+
+  /** PAGE-013 — Vue publique d'une page précise du site publié. */
+  @Public()
+  @Get("public/sites/:slug/pages/:pageSlug")
+  getPublicPage(@Param("slug") slug: string, @Param("pageSlug") pageSlug: string) {
+    return this.pagesService.getPublicSite(slug, pageSlug);
+  }
 }

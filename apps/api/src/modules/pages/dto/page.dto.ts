@@ -1,10 +1,22 @@
 import { IsInt, IsOptional, IsString, MaxLength, Min, MinLength } from "class-validator";
 
-/** Blocs de contenu supportés par le builder (v1 : hero, texte, cta). */
-export type BlocType = "hero" | "texte" | "cta";
-export type Bloc = { type: BlocType } & Partial<Record<"titre" | "sousTitre" | "texte" | "ctaLabel" | "ctaHref", string>>;
+/** Blocs de contenu supportés par le builder (hero, texte, cta, image, contact, horaires). */
+export type BlocType = "hero" | "texte" | "cta" | "image" | "contact" | "horaires";
+export type Bloc = { type: BlocType } & Partial<
+  Record<"titre" | "sousTitre" | "texte" | "ctaLabel" | "ctaHref" | "url" | "alt" | "telephone" | "email" | "adresse" | "horaires", string>
+>;
 
-const BLOC_FIELDS: readonly (keyof Omit<Bloc, "type">)[] = ["titre", "sousTitre", "texte", "ctaLabel", "ctaHref"];
+const BLOC_FIELDS: readonly (keyof Omit<Bloc, "type">)[] = [
+  "titre", "sousTitre", "texte", "ctaLabel", "ctaHref",
+  "url", "alt", "telephone", "email", "adresse", "horaires",
+];
+
+/** URL d'image acceptée : http(s) uniquement, 500 caractères max. */
+function sanitizeImageUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return /^https?:\/\//.test(trimmed) ? trimmed.slice(0, 500) : undefined;
+}
 
 /** Ne garde que les blocs connus, avec leurs champs texte uniquement (limite la taille/injection). */
 export function sanitizeContenu(input: unknown): Bloc[] {
@@ -13,13 +25,18 @@ export function sanitizeContenu(input: unknown): Bloc[] {
   for (const raw of input.slice(0, 30)) {
     if (typeof raw !== "object" || raw === null) continue;
     const type = (raw as Record<string, unknown>).type;
-    if (type !== "hero" && type !== "texte" && type !== "cta") continue;
+    if (type !== "hero" && type !== "texte" && type !== "cta" && type !== "image" && type !== "contact" && type !== "horaires") continue;
     const bloc: Bloc = { type };
     for (const field of BLOC_FIELDS) {
       const value = (raw as Record<string, unknown>)[field];
       if (typeof value === "string" && value.trim()) {
         bloc[field] = value.trim().slice(0, 500);
       }
+    }
+    if (type === "image") {
+      const url = sanitizeImageUrl((raw as Record<string, unknown>).url);
+      if (url) bloc.url = url;
+      else continue; // un bloc image sans URL valide est ignoré
     }
     out.push(bloc);
   }
