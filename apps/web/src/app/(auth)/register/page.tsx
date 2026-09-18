@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -12,8 +12,10 @@ type RegisterResponse = {
   message: string;
 };
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const planChoisi = searchParams.get("plan"); // PLAN-003 — préselection depuis /pricing
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
@@ -48,6 +50,11 @@ export default function RegisterPage() {
       <p className="mt-2 text-body text-neutral-600">
         Créez votre premier site en quelques minutes.
       </p>
+      {planChoisi && (
+        <p role="status" className="mt-4 rounded-input border border-primary-600/30 bg-primary-600/5 px-3 py-2 text-small text-primary-700">
+          Plan sélectionné : <strong className="capitalize">{planChoisi}</strong> — vous pourrez l'activer après la création de votre compte.
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
         <Input
@@ -89,14 +96,20 @@ export default function RegisterPage() {
         <Button type="submit" size="lg" loading={loading} className="w-full">
           {loading ? "Création du compte…" : "Créer mon compte"}
         </Button>
-      </form>
-
-      <p className="mt-6 text-center text-small text-neutral-600">
-        Déjà un compte ?{" "}
-        <a href="/register" className="text-primary-600 underline-offset-4 hover:underline">
+      </form>      <p className="mt-6 text-center text-small text-neutral-600">
+        Déjà un compte ? {" "}
+        <a href="/login" className="text-primary-600 underline-offset-4 hover:underline">
           Se connecter
         </a>
       </p>
     </Card>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<Card variant="elevated" className="h-96 animate-pulse" />}>
+      <RegisterContent />
+    </Suspense>
   );
 }
