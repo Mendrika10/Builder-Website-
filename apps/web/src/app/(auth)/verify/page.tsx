@@ -88,8 +88,8 @@ function VerifyContent() {
         <p className="mt-2 text-body text-neutral-600">
           Bienvenue sur Site.mg — votre compte est prêt.
         </p>
-        <Button size="lg" className="mt-6 w-full" onClick={() => (window.location.href = "/")}>
-          Aller au tableau de bord
+        <Button size="lg" className="mt-6 w-full" onClick={() => (window.location.href = "/login")}>
+          Se connecter à mon compte
         </Button>
       </Card>
     );

@@ -54,7 +54,7 @@ export default function DashboardPage() {
           Bonjour {user?.nom.split(" ")[0]} 👋
         </h1>
         <p className="mt-2 text-body text-neutral-600">
-          Votre compte est actif. La création de sites arrive dans quelques jours.
+          Votre compte est actif. Créez et gérez vos sites depuis votre espace.
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
