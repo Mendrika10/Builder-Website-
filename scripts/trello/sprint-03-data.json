@@ -1,0 +1,124 @@
+{
+  "boardName": "Site.mg — Sprint Board",
+  "sprint": "Sprint 03 — Le builder visuel",
+  "docPath": "docs/backlog/sprint-03.md",
+  "labels": [
+    "👑 orchestrator",
+    "📋 product-owner",
+    "🏗️ architect",
+    "🎨 ui-art-director",
+    "💻 frontend",
+    "⚙️ backend",
+    "🗄️ database",
+    "🧪 qa",
+    "🔐 security",
+    "🔍 reviewer",
+    "🚀 devops",
+    "📚 documentation"
+  ],
+  "stories": [
+    {
+      "id": "US-040",
+      "title": "Pages d'un site (backend)",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": ["US-030 (Sprint 02, DONE)"],
+      "tasks": [
+        {
+          "id": "PAGE-001",
+          "title": "Migration : model Page (titre, slug unique par site, contenu JSON, ordre) + relation Site→pages",
+          "owner": "🗄️ database",
+          "dependencies": []
+        },
+        {
+          "id": "PAGE-002",
+          "title": "API pages : POST/GET /sites/:siteId/pages, PUT/DELETE /pages/:id (ownership + slug auto)",
+          "owner": "⚙️ backend",
+          "dependencies": ["PAGE-001"]
+        },
+        {
+          "id": "PAGE-003",
+          "title": "Publication : POST /sites/:siteId/publish + unpublish, GET /public/sites/:slug (200 si publié, 404 sinon)",
+          "owner": "⚙️ backend",
+          "dependencies": ["PAGE-001"]
+        },
+        {
+          "id": "PAGE-004",
+          "title": "Tests e2e : CRUD pages, ownership, publication, endpoint public",
+          "owner": "🧪 qa",
+          "dependencies": ["PAGE-002", "PAGE-003"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "Contenu de page = JSON typé (blocs hero/texte/cta) validé à l'entrée",
+        "Seul le propriétaire modifie ses pages (404 sinon)",
+        "GET /public/sites/:slug → 200 uniquement si publié (404 sinon)",
+        "Parcours e2e complet : page → édition → publication → visible en public"
+      ]
+    },
+    {
+      "id": "US-041",
+      "title": "Éditeur visuel (frontend)",
+      "status": "READY",
+      "owner": "💻 frontend",
+      "dependsOn": ["US-040"],
+      "tasks": [
+        {
+          "id": "PAGE-005",
+          "title": "Page /dashboard/sites/[id] : éditeur de la page d'accueil (blocs hero/texte/cta)",
+          "owner": "💻 frontend",
+          "dependencies": ["PAGE-002"]
+        },
+        {
+          "id": "PAGE-006",
+          "title": "Prévisualisation live + sauvegarde PUT /pages/:id",
+          "owner": "💻 frontend",
+          "dependencies": ["PAGE-005"]
+        },
+        {
+          "id": "PAGE-007",
+          "title": "QA : parcours réel sur la preview (édition → sauvegarde → reload)",
+          "owner": "🧪 qa",
+          "dependencies": ["PAGE-006"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "Ajouter, modifier, déplacer, supprimer des blocs (hero / texte / CTA)",
+        "Prévisualisation reflète le contenu en cours",
+        "Modifications persistées et survivent à un rechargement"
+      ]
+    },
+    {
+      "id": "US-042",
+      "title": "Publication et site public",
+      "status": "READY",
+      "owner": "💻 frontend",
+      "dependsOn": ["US-041"],
+      "tasks": [
+        {
+          "id": "PAGE-008",
+          "title": "Bouton Publier / Dépublier sur l'éditeur + URL publique affichée",
+          "owner": "💻 frontend",
+          "dependencies": ["PAGE-003", "PAGE-006"]
+        },
+        {
+          "id": "PAGE-009",
+          "title": "Page publique /s/[slug] : rendu serveur des blocs publiés (404 si non publié)",
+          "owner": "💻 frontend",
+          "dependencies": ["PAGE-003"]
+        },
+        {
+          "id": "PAGE-010",
+          "title": "QA : démo réelle complète (éditer → publier → voir /s/<slug>)",
+          "owner": "🧪 qa",
+          "dependencies": ["PAGE-008", "PAGE-009"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "Publier expose /s/<slug> ; dépublier la rend 404",
+        "Rendu public fidèle à la prévisualisation (tokens Ivoire & Indigo)",
+        "Parcours complet validé en conditions réelles"
+      ]
+    }
+  ]
+}
