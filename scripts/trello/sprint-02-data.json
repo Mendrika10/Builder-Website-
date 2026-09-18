@@ -1,0 +1,156 @@
+{
+  "boardName": "Site.mg — Sprint Board",
+  "sprint": "Sprint 02 — Connexion, plans et premier site",
+  "docPath": "docs/backlog/sprint-02.md",
+  "labels": [
+    "👑 orchestrator",
+    "📋 product-owner",
+    "🏗️ architect",
+    "🎨 ui-art-director",
+    "💻 frontend",
+    "⚙️ backend",
+    "🗄️ database",
+    "🧪 qa",
+    "🔐 security",
+    "🔍 reviewer",
+    "🚀 devops",
+    "📚 documentation"
+  ],
+  "stories": [
+    {
+      "id": "US-002",
+      "title": "Connexion / déconnexion (JWT)",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": ["US-093 (Sprint 01, DONE)"],
+      "tasks": [
+        {
+          "id": "AUTH-010",
+          "title": "POST /auth/login : bcrypt + emailVerifie, JWT access 15 min + refresh 7 j, rate limiting",
+          "owner": "⚙️ backend",
+          "dependencies": []
+        },
+        {
+          "id": "AUTH-011",
+          "title": "POST /auth/refresh + POST /auth/logout (révocation refresh par hash en base)",
+          "owner": "⚙️ backend",
+          "dependencies": ["AUTH-010"]
+        },
+        {
+          "id": "AUTH-012",
+          "title": "JwtAuthGuard + @CurrentUser() (stratégie passport-jwt)",
+          "owner": "⚙️ backend",
+          "dependencies": ["AUTH-010"]
+        },
+        {
+          "id": "AUTH-013",
+          "title": "Page /login (états loading/error/success) + contexte session web",
+          "owner": "💻 frontend",
+          "dependencies": ["AUTH-010"]
+        },
+        {
+          "id": "AUTH-014",
+          "title": "Dashboard minimal /dashboard protégé côté client",
+          "owner": "💻 frontend",
+          "dependencies": ["AUTH-013"]
+        },
+        {
+          "id": "AUTH-015",
+          "title": "Tests unitaires login/refresh/logout + e2e parcours complet",
+          "owner": "🧪 qa",
+          "dependencies": ["AUTH-011", "AUTH-012"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "Un compte vérifié se connecte et reçoit ses tokens ; non vérifié → 403 clair",
+        "Mot de passe erroné → 401 sans révéler si l'email existe",
+        "/dashboard inaccessible sans JWT valide ; refresh renouvelle l'accès",
+        "Logout révoque le refresh token (réutilisation impossible)",
+        "Parcours complet testé en e2e"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Catalogue des plans",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": ["FOND-021 (Sprint 01, DONE)"],
+      "tasks": [
+        {
+          "id": "PLAN-001",
+          "title": "GET /plans : liste des plans actifs depuis la table plan",
+          "owner": "⚙️ backend",
+          "dependencies": []
+        },
+        {
+          "id": "PLAN-002",
+          "title": "Page /pricing publique : 3 cartes plans (tokens design), CTA « Choisir »",
+          "owner": "💻 frontend",
+          "dependencies": ["PLAN-001"]
+        },
+        {
+          "id": "PLAN-003",
+          "title": "/register préselectionne le plan via query param ?plan=",
+          "owner": "💻 frontend",
+          "dependencies": ["PLAN-002"]
+        },
+        {
+          "id": "PLAN-004",
+          "title": "Tests e2e GET /plans + rendu /pricing",
+          "owner": "🧪 qa",
+          "dependencies": ["PLAN-001", "PLAN-002"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "/pricing affiche les 3 plans depuis l'API (pas de hardcode)",
+        "CTA → /register?plan=<slug>, préselection conservée",
+        "Réponse API sans champs internes inutiles"
+      ]
+    },
+    {
+      "id": "US-030",
+      "title": "Première page du builder",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": ["US-002"],
+      "tasks": [
+        {
+          "id": "SITE-001",
+          "title": "POST /sites : création (slug auto-dérivé + unicité), quota max_sites du plan",
+          "owner": "⚙️ backend",
+          "dependencies": ["AUTH-012"]
+        },
+        {
+          "id": "SITE-002",
+          "title": "GET /sites : liste des sites de l'utilisateur (guard JWT)",
+          "owner": "⚙️ backend",
+          "dependencies": ["SITE-001"]
+        },
+        {
+          "id": "SITE-003",
+          "title": "PATCH /sites/:id (renommer) et DELETE /sites/:id (soft delete)",
+          "owner": "⚙️ backend",
+          "dependencies": ["SITE-001"]
+        },
+        {
+          "id": "SITE-004",
+          "title": "Page /dashboard/sites : liste + formulaire « Nouveau site »",
+          "owner": "💻 frontend",
+          "dependencies": ["SITE-002", "AUTH-014"]
+        },
+        {
+          "id": "SITE-005",
+          "title": "Tests unitaires quotas + e2e CRUD sites",
+          "owner": "🧪 qa",
+          "dependencies": ["SITE-001", "SITE-003"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "Gratuit (1 site) ne peut pas créer un 2e site (403 quota)",
+        "Slug unique, dérivé du nom, éditable avant création",
+        "Liste isolée par utilisateur (JWT)",
+        "CRUD testé en e2e"
+      ]
+    }
+  ]
+}
