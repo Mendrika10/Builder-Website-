@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+jobs:
+  web:
+    name: Web — lint, typecheck, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint -w @site-mg/web
+      - run: npm run typecheck -w @site-mg/web
+      - run: npm run build -w @site-mg/web
+
+  api:
+    name: API — lint, typecheck, tests, build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: sitemg
+          POSTGRES_PASSWORD: sitemg
+          POSTGRES_DB: sitemg
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sitemg"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://sitemg:sitemg@localhost:5432/sitemg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate -w @site-mg/api
+      - run: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+      - run: npm run lint -w @site-mg/api
+      - run: npm run typecheck -w @site-mg/api
+      - run: npm test -w @site-mg/api
+      - run: npm run build -w @site-mg/api
