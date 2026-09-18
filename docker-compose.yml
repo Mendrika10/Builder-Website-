@@ -1,32 +1,45 @@
+# ============================================================
+#  Site.mg — Environnement de développement (rebuild, Sprint 01)
+#  FOND-010 : PostgreSQL 16 + Redis
+#
+#  Usage : docker compose up -d
+#  Ports hôte : 6543 (PostgreSQL) et 6380 (Redis) — les ports
+#  standard 5432/6379 sont déjà occupés sur cette machine.
+#  Adapter DATABASE_URL/REDIS_URL de apps/api/.env en conséquence.
+# ============================================================
+
 services:
   db:
-    image: mysql:8.0
+    image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: mendrika10
-      MYSQL_DATABASE: builder_v1
-      # Using root via MYSQL_ROOT_PASSWORD; do not set MYSQL_USER=root
+      # Valeurs par défaut de DEV uniquement — surcharger via .env (jamais commité)
+      POSTGRES_USER: ${POSTGRES_USER:-sitemg}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sitemg_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-sitemg}
     ports:
-      - "33060:3306" # avoid binding host port 3306 so local MySQL can be used
-    # Change the host path to your desired folder (Windows example: D:/Projet Nante/mysql-data)
+      - "6543:5432" # hôte 6543 → conteneur 5432 (5432 déjà pris en local)
     volumes:
-      - ./mysql-data:/var/lib/mysql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sitemg} -d ${POSTGRES_DB:-sitemg}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  adminer:
-    image: adminer
+  redis:
+    image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "6380:6379" # hôte 6380 → conteneur 6379 (6379 déjà pris en local)
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-# Notes:
-# - This compose file previously mapped host port 3306 to the container.
-#   If you want to use a MySQL server installed locally on your machine (host:3306),
-#   stop or remove the `db` container so it doesn't conflict:
-#     docker-compose down
-#   or comment out/remove the `db` service in this file.
-# - The MySQL container is still available on host port 33060 if you need it.
-# - Set `DATABASE_URL` in your .env to point to your preferred server (local or docker).
-# - To apply Prisma migrations against your local server, ensure the local server is running
-#   and then run:
-#     npx prisma migrate dev --name add-navigation-image
-#     npx prisma generate
+volumes:
+  pgdata:
+  redisdata:

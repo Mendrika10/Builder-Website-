@@ -12,7 +12,11 @@ dist/
 build/
 
 # Prisma
-prisma/migrations/
+# (v1 à la racine uniquement — les migrations du monorepo apps/api sont commitées)
+/prisma/migrations/
+
+# Client Prisma généré (isolé pour l'api)
+apps/api/src/generated/
 
 # Env
 .env
@@ -37,3 +41,6 @@ Thumbs.db
 .vscode/settings.json
 .idea/
 mysql-data/
+
+# Freebuff (logs et artefacts de session)
+.freebuff/

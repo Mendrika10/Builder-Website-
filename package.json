@@ -2,16 +2,25 @@
   "name": "builder-website",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio",
-    "db:seed": "prisma db seed"
+    "db:generate": "npm run db:generate -w @site-mg/api",
+    "db:migrate": "npm run db:migrate -w @site-mg/api",
+    "db:seed": "npm run db:seed -w @site-mg/api",
+    "db:push:v1": "prisma db push",
+    "db:studio:v1": "prisma studio",
+    "dev:web": "npm run dev -w @site-mg/web",
+    "dev:api": "npm run dev -w @site-mg/api",
+    "build:web": "npm run build -w @site-mg/web",
+    "build:api": "npm run build -w @site-mg/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint:apps": "npm run lint --workspaces --if-present"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.2",
