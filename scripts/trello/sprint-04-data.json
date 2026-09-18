@@ -1,0 +1,123 @@
+{
+  "boardName": "Site.mg — Sprint Board",
+  "sprint": "Sprint 04 — Sites multipages et contenu riche",
+  "docPath": "docs/backlog/sprint-04.md",
+  "labels": [
+    "👑 orchestrator",
+    "📋 product-owner",
+    "🏗️ architect",
+    "🎨 ui-art-director",
+    "💻 frontend",
+    "⚙️ backend",
+    "🗄️ database",
+    "🧪 qa",
+    "🔐 security",
+    "🔍 reviewer",
+    "🚀 devops",
+    "📚 documentation"
+  ],
+  "stories": [
+    {
+      "id": "US-050",
+      "title": "Multi-pages",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": ["US-040/041 (Sprint 03, DONE)"],
+      "tasks": [
+        {
+          "id": "PAGE-011",
+          "title": "Quota max_pages du plan appliqué à POST /sites/:siteId/pages (403 avec message plan)",
+          "owner": "⚙️ backend",
+          "dependencies": []
+        },
+        {
+          "id": "PAGE-012",
+          "title": "Éditeur : gestionnaire de pages (liste, création, suppression, bascule)",
+          "owner": "💻 frontend",
+          "dependencies": ["PAGE-011"]
+        },
+        {
+          "id": "PAGE-013",
+          "title": "Site public multipage : /s/[slug]/[pageSlug] + navigation entre pages",
+          "owner": "💻 frontend",
+          "dependencies": ["PAGE-011"]
+        },
+        {
+          "id": "PAGE-014",
+          "title": "Tests e2e : quota pages + parcours multipage public",
+          "owner": "🧪 qa",
+          "dependencies": ["PAGE-012", "PAGE-013"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "Un plan limité à 5 pages refuse la 6e (403 avec message clair)",
+        "L'éditeur permet de créer, supprimer et basculer entre les pages",
+        "Le site public expose chaque page sur /s/<slug>/<page> avec navigation",
+        "Parcours e2e : 2 pages créées, publiées et visitables en public"
+      ]
+    },
+    {
+      "id": "US-051",
+      "title": "Blocs riches (image, contact, horaires)",
+      "status": "READY",
+      "owner": "💻 frontend",
+      "dependsOn": ["US-050"],
+      "tasks": [
+        {
+          "id": "BLOC-001",
+          "title": "API : sanitization image (url, alt), contact (téléphone, email, adresse), horaires",
+          "owner": "⚙️ backend",
+          "dependencies": []
+        },
+        {
+          "id": "BLOC-002",
+          "title": "Éditeur : champs des nouveaux blocs (image par URL en v1)",
+          "owner": "💻 frontend",
+          "dependencies": ["BLOC-001"]
+        },
+        {
+          "id": "BLOC-003",
+          "title": "Rendu : BlocView des nouveaux blocs (image responsive, contact, horaires)",
+          "owner": "💻 frontend",
+          "dependencies": ["BLOC-002"]
+        },
+        {
+          "id": "BLOC-004",
+          "title": "Tests e2e sanitization + QA visuelle sur la preview",
+          "owner": "🧪 qa",
+          "dependencies": ["BLOC-001", "BLOC-003"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "Les 3 nouveaux blocs passent la sanitization (URL http(s), champs bornés)",
+        "L'éditeur propose les 6 types de blocs avec leurs champs dédiés",
+        "Le rendu public est fidèle à la prévisualisation et responsive"
+      ]
+    },
+    {
+      "id": "US-052",
+      "title": "SEO de base du site public",
+      "status": "READY",
+      "owner": "💻 frontend",
+      "dependsOn": ["US-050"],
+      "tasks": [
+        {
+          "id": "SEO-001",
+          "title": "generateMetadata sur /s/[slug] et /s/[slug]/[pageSlug] : title/description dérivés du contenu",
+          "owner": "💻 frontend",
+          "dependencies": []
+        },
+        {
+          "id": "SEO-002",
+          "title": "QA : vérification des balises générées sur la preview",
+          "owner": "🧪 qa",
+          "dependencies": ["SEO-001"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "Chaque page publique a un <title> et une meta description uniques et lisibles",
+        "Aucune fuite du contenu des sites non publiés (404 → pas de metadata)"
+      ]
+    }
+  ]
+}
