@@ -1,0 +1,182 @@
+{
+  "boardName": "Site.mg — Sprint Board",
+  "sprint": "Sprint 01 — Fondations techniques",
+  "labels": [
+    "👑 orchestrator",
+    "📋 product-owner",
+    "🏗️ architect",
+    "🎨 ui-art-director",
+    "💻 frontend",
+    "⚙️ backend",
+    "🗄️ database",
+    "🧪 qa",
+    "🔐 security",
+    "🔍 reviewer",
+    "🚀 devops",
+    "📚 documentation"
+  ],
+  "stories": [
+    {
+      "id": "US-090",
+      "title": "Scaffold monorepo",
+      "status": "READY",
+      "owner": "🚀 devops",
+      "dependsOn": [],
+      "tasks": [
+        {
+          "id": "FOND-001",
+          "title": "Créer apps/web (Next.js) et apps/api (NestJS), npm workspaces, passer ADR-002 à Accepted",
+          "owner": "🚀 devops",
+          "dependencies": []
+        },
+        {
+          "id": "FOND-002",
+          "title": "Lint + typecheck configurés sur les deux apps (ESLint, tsconfig strict)",
+          "owner": "🚀 devops",
+          "dependencies": ["FOND-001"]
+        },
+        {
+          "id": "FOND-002b",
+          "title": "Setup Tailwind sur apps/web (ADR-003) : config, cn() dans lib/, squelette components/ui/",
+          "owner": "🎨 ui-art-director",
+          "dependencies": ["FOND-001"]
+        },
+        {
+          "id": "FOND-003",
+          "title": "Health check GET /health sur l'API",
+          "owner": "⚙️ backend",
+          "dependencies": ["FOND-001"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "npm install puis npm run dev lance web et api",
+        "GET http://localhost:3000/health (api) répond { \"status\": \"ok\" }",
+        "npm run lint et npm run typecheck passent sur tout le repo",
+        "Tailwind opérationnel sur apps/web : tokens dans tailwind.config.ts, Button de démo dans components/ui/"
+      ]
+    },
+    {
+      "id": "US-091",
+      "title": "Docker Compose",
+      "status": "READY",
+      "owner": "🚀 devops",
+      "dependsOn": ["US-090"],
+      "tasks": [
+        {
+          "id": "FOND-010",
+          "title": "docker-compose.yml : db (PostgreSQL 16), redis, ports documentés",
+          "owner": "🚀 devops",
+          "dependencies": []
+        },
+        {
+          "id": "FOND-011",
+          "title": ".env.example complet à la racine et par app, sans secrets réels",
+          "owner": "🚀 devops",
+          "dependencies": []
+        }
+      ],
+      "acceptanceCriteria": [
+        "docker compose up -d démarre PostgreSQL et Redis",
+        "L'API se connecte à PostgreSQL via DATABASE_URL du .env",
+        "README.md décrit l'installation en ≤ 10 commandes"
+      ]
+    },
+    {
+      "id": "US-092",
+      "title": "Modèle de données initial",
+      "status": "READY",
+      "owner": "🗄️ database",
+      "dependsOn": ["US-091"],
+      "tasks": [
+        {
+          "id": "FOND-020",
+          "title": "Migration initiale : user, email_verification, plan, subscription, site + enums + index",
+          "owner": "🗄️ database",
+          "dependencies": []
+        },
+        {
+          "id": "FOND-021",
+          "title": "Seed : 3 plans (Gratuit / Pro / Business)",
+          "owner": "🗄️ database",
+          "dependencies": ["FOND-020"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "npm run db:migrate applique la migration sur une base vide",
+        "Unicité : user.email, site.slug",
+        "Index sur toutes les clés étrangères",
+        "Seed idempotent"
+      ]
+    },
+    {
+      "id": "US-093",
+      "title": "Inscription + vérification email (bout en bout)",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": ["US-092"],
+      "tasks": [
+        {
+          "id": "AUTH-001",
+          "title": "API POST /auth/register : DTO, validation, bcrypt, unicité email, réponse sans données sensibles",
+          "owner": "⚙️ backend",
+          "dependencies": []
+        },
+        {
+          "id": "AUTH-002",
+          "title": "API POST /auth/verify : code 6 chiffres, expiration, limite de tentatives, blocage temporaire",
+          "owner": "⚙️ backend",
+          "dependencies": ["AUTH-001"]
+        },
+        {
+          "id": "AUTH-003",
+          "title": "API POST /auth/resend-code (rate limited)",
+          "owner": "⚙️ backend",
+          "dependencies": ["AUTH-002"]
+        },
+        {
+          "id": "AUTH-004",
+          "title": "Envoi d'email via Nodemailer (module notifications)",
+          "owner": "⚙️ backend",
+          "dependencies": []
+        },
+        {
+          "id": "AUTH-005",
+          "title": "Pages /register et /verify (Formik + Yup, états loading/error/success)",
+          "owner": "💻 frontend",
+          "dependencies": ["AUTH-001"]
+        },
+        {
+          "id": "AUTH-006",
+          "title": "Tests unitaires services + tests e2e du parcours register→verify",
+          "owner": "🧪 qa",
+          "dependencies": ["AUTH-002", "AUTH-005"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "Inscription crée un utilisateur avec emailVerifie=false et envoie un code",
+        "3 codes erronés → blocage temporaire (message clair)",
+        "Le code expiré est refusé",
+        "Les réponses API n'exposent jamais le hash du mot de passe",
+        "Parcours complet testé en e2e"
+      ]
+    },
+    {
+      "id": "US-091b",
+      "title": "CI/CD",
+      "status": "READY",
+      "owner": "🚀 devops",
+      "dependsOn": ["US-090"],
+      "tasks": [
+        {
+          "id": "FOND-030",
+          "title": "GitHub Actions : lint + typecheck + tests + build, déclenché sur PR vers develop",
+          "owner": "🚀 devops",
+          "dependencies": []
+        }
+      ],
+      "acceptanceCriteria": [
+        "Une PR rouge (lint, typecheck, tests ou build KO) ne peut pas merger"
+      ]
+    }
+  ]
+}

@@ -44,3 +44,6 @@ mysql-data/
 
 # Freebuff (logs et artefacts de session)
 .freebuff/
+
+# tsbuildinfo (artefact de build incrémental)
+*.tsbuildinfo
