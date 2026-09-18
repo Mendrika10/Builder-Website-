@@ -49,6 +49,7 @@ jobs:
       - run: npm ci
       - run: npm run prisma:generate -w @site-mg/api
       - run: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+      - run: npm run db:seed -w @site-mg/api
       - run: npm run lint -w @site-mg/api
       - run: npm run typecheck -w @site-mg/api
       - run: npm test -w @site-mg/api
