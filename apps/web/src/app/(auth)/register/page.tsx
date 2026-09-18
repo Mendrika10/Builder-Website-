@@ -52,7 +52,7 @@ function RegisterContent() {
       </p>
       {planChoisi && (
         <p role="status" className="mt-4 rounded-input border border-primary-600/30 bg-primary-600/5 px-3 py-2 text-small text-primary-700">
-          Plan sélectionné : <strong className="capitalize">{planChoisi}</strong> — vous pourrez l'activer après la création de votre compte.
+          Plan sélectionné : <strong className="capitalize">{planChoisi}</strong> — vous pourrez l&apos;activer après la création de votre compte.
         </p>
       )}
 
