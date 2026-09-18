@@ -32,7 +32,7 @@ Owner: Backend + Frontend · Dépend de: US-093 (✅)
 
 ---
 
-### US-010 — Catalogue des plans — `READY`
+### US-010 — Catalogue des plans — `DONE`
 
 Owner: Backend + Frontend · Dépend de: FOND-021 (seed, ✅)
 
@@ -51,9 +51,11 @@ Owner: Backend + Frontend · Dépend de: FOND-021 (seed, ✅)
 - Le CTA mène vers `/register?plan=<slug>` et la préselection survit au formulaire
 - Réponse API sans champs internes inutiles
 
+**Exécution (PLAN-001→004, PR #5)** : GET /plans public (DTO épuré) ✔ · /pricing branchée sur l'API, Pro en avant ✔ · /register?plan= → bandeau de préselection ✔ · e2e plans (correction au passage : seed ajouté en CI) ✔ · 34/34 tests PASS ✔
+
 ---
 
-### US-030 — Première page du builder — `READY`
+### US-030 — Première page du builder — `DONE`
 
 Owner: Backend + Frontend · Dépend de: US-002 (✅ après sprint)
 
@@ -74,9 +76,13 @@ Owner: Backend + Frontend · Dépend de: US-002 (✅ après sprint)
 - La liste ne montre que les sites de l'utilisateur (isolation par JWT)
 - CRUD testé en e2e
 
+**Exécution (SITE-001→005, PR #6)** : POST/GET/PATCH/DELETE /sites (guard JWT, quotas plan, slug auto unique, soft delete) ✔ · /dashboard/sites : liste + création + renommage inline + suppression confirmée ✔ · e2e CRUD (8 tests) ✔ · 42/42 tests PASS ✔ · parcours validé en réel dans le navigateur (création → renommage → suppression)
+
 ---
 
-## Definition of Done (rappel, voir [AGENTS.md §10](../../AGENTS.md#10-definition-of-done))
+## Bilan Sprint 02
+
+**3/3 stories DONE** — US-002 (connexion JWT) · US-010 (catalogue plans) · US-030 (premier site). Goal atteint : un utilisateur peut s'inscrire, se connecter et créer son premier site.
 
 ```text
 [ ] Fonctionnalité implémentée          [ ] Sécurité vérifiée

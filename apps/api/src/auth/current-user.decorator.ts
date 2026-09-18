@@ -1,10 +1,10 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import type { JwtPayload } from "./auth.service";
 
-/** Injecte le payload JWT de l'utilisateur authentifié dans un handler. */
+/** Injecte le payload JWT — ou une seule propriété via @CurrentUser("sub"). */
 export const CurrentUser = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext): JwtPayload => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.user as JwtPayload;
+  (data: keyof JwtPayload | undefined, ctx: ExecutionContext): JwtPayload | JwtPayload[keyof JwtPayload] => {
+    const user = ctx.switchToHttp().getRequest().user as JwtPayload;
+    return data ? user[data] : user;
   },
 );
