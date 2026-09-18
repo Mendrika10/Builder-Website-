@@ -7,7 +7,7 @@ Dépendances : Sprint 02 ✔ DONE (auth JWT, plans, CRUD sites).
 
 ---
 
-### US-040 — Pages d'un site (backend) — `READY`
+### US-040 — Pages d'un site (backend) — `DONE`
 
 Owner: Backend · Dépend de: US-030 (✅ Sprint 02)
 
@@ -27,9 +27,11 @@ Owner: Backend · Dépend de: US-030 (✅ Sprint 02)
 - `GET /public/sites/:slug` répond 200 uniquement si le site est **publié** (404 sinon, sans fuite d'info)
 - Parcours e2e complet : page → édition → publication → visible en public
 
+**Exécution (PAGE-001→004, PR #10)** : model Page + migration ✔ · CRUD pages (ownership 404, slug unique par site, sanitization blocs) ✔ · publish/unpublish + GET /public/sites/:slug (@Public, 404 si non publié) ✔ · 9 tests e2e, suite 51/51 PASS ✔
+
 ---
 
-### US-041 — Éditeur visuel (frontend) — `READY`
+### US-041 — Éditeur visuel (frontend) — `DONE`
 
 Owner: Frontend · Dépend de: US-040
 
@@ -47,9 +49,11 @@ Owner: Frontend · Dépend de: US-040
 - La prévisualisation reflète le contenu en cours (pas seulement la sauvegarde)
 - Les modifications sont persistées et survivent à un rechargement
 
+**Exécution (PAGE-005→007, PR #11)** : éditeur /dashboard/sites/[id] (blocs hero/texte/cta, réordonnancement, suppression) ✔ · prévisualisation live ✔ · sauvegarde avec état dirty/saved ✔ · QA live : édition → sauvegarde → reload OK
+
 ---
 
-### US-042 — Publication et site public — `READY`
+### US-042 — Publication et site public — `DONE`
 
 Owner: Frontend · Dépend de: US-041
 
@@ -67,14 +71,10 @@ Owner: Frontend · Dépend de: US-041
 - Le rendu public utilise les tokens design (Ivoire & Indigo) et est fidèle à la prévisualisation
 - Le parcours complet est validé en conditions réelles sur la preview
 
+**Exécution (PAGE-008→010, PR #11)** : bouton Publier/Dépublier (statut cible) + lien /s/<slug> ✔ · page publique /s/[slug] en rendu serveur, 404 si non publié ✔ · 🐛 bug Publier trouvé et corrigé en QA live · démo réelle validée dans le navigateur
+
 ---
 
-## Definition of Done (rappel, voir [AGENTS.md §10](../../AGENTS.md#10-definition-of-done))
+## Bilan Sprint 03
 
-```text
-[ ] Fonctionnalité implémentée          [ ] Sécurité vérifiée
-[ ] Acceptance Criteria respectés       [ ] Responsive si frontend
-[ ] TypeScript valide                   [ ] Code review terminé (sur PR)
-[ ] Lint valide                         [ ] Documentation à jour
-[ ] Tests passés                        [ ] CI verte sur la PR
-```
+**3/3 stories DONE** — US-040 (pages + publication) · US-041 (éditeur visuel) · US-042 (site public). Goal atteint : un utilisateur peut éditer son site en blocs et le publier sur /s/<slug>.
