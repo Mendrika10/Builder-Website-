@@ -140,9 +140,9 @@ export class PagesService {
       // PAGE-013 — Une page précise (404 si absente, sans fuite sur les non publiées : tout est public ici)
       const page = pages.find((p) => p.slug === pageSlug);
       if (!page) throw new NotFoundException("Page introuvable.");
-      return { nom: site.nom, slug: site.slug, page };
+      return { nom: site.nom, slug: site.slug, theme: site.theme, page };
     }
-    return { nom: site.nom, slug: site.slug, pages };
+    return { nom: site.nom, slug: site.slug, theme: site.theme, vues: site.vues, pages };
   }
 
   private async findOwnedPage(userId: string, pageId: string) {

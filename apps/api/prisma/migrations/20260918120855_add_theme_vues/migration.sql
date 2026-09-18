@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "site" ADD COLUMN     "theme" VARCHAR(20) NOT NULL DEFAULT 'indigo',
+ADD COLUMN     "vues" INTEGER NOT NULL DEFAULT 0;

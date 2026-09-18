@@ -15,6 +15,7 @@ export type PublicSite = {
   nom: string;
   slug: string;
   statut: string;
+  theme: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -72,12 +73,15 @@ export class SitesService {
     return sites.map((s) => this.toPublicSite(s));
   }
 
-  /** SITE-003 — Renommage (le site doit appartenir à l'utilisateur). */
-  async rename(userId: string, siteId: string, nom: string): Promise<PublicSite> {
+  /** SITE-003 — Renommage et/ou thème (le site doit appartenir à l'utilisateur). */
+  async update(userId: string, siteId: string, dto: { nom?: string; theme?: string }): Promise<PublicSite> {
     const site = await this.findOwned(userId, siteId);
     const updated = await this.prisma.site.update({
       where: { id: site.id },
-      data: { nom: nom.trim() },
+      data: {
+        ...(dto.nom !== undefined ? { nom: dto.nom.trim() } : {}),
+        ...(dto.theme !== undefined ? { theme: dto.theme } : {}),
+      },
     });
     return this.toPublicSite(updated);
   }
@@ -115,6 +119,7 @@ export class SitesService {
     nom: string;
     slug: string;
     statut: string;
+    theme: string;
     createdAt: Date;
     updatedAt: Date;
   }): PublicSite {
@@ -123,6 +128,7 @@ export class SitesService {
       nom: site.nom,
       slug: site.slug,
       statut: site.statut,
+      theme: site.theme,
       createdAt: site.createdAt,
       updatedAt: site.updatedAt,
     };

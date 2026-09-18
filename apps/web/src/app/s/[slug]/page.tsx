@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BlocList } from "@/components/builder/BlocView";
+import { ViewCounter } from "./ViewCounter";
+import { paletteOf } from "@/lib/themes";
 import type { Bloc } from "@/lib/pages";
 import { API_URL } from "@/lib/api";
 
 type PublicPage = { titre: string; slug: string; contenu: Bloc[] };
-type PublicSite = { nom: string; slug: string; pages: PublicPage[] };
+type PublicSite = { nom: string; slug: string; theme?: string; vues?: number; pages: PublicPage[] };
 
 async function getSite(slug: string): Promise<PublicSite | null> {
   const res = await fetch(`${API_URL}/public/sites/${slug}`, { cache: "no-store" });
@@ -47,7 +49,12 @@ export default async function PublicSitePage({ params }: { params: Promise<{ slu
               <li key={p.slug}>
                 <Link
                   href={`/s/${site.slug}/${p.slug}`}
-                  className="inline-flex h-9 items-center rounded-input px-4 text-small font-medium text-neutral-600 transition-colors hover:bg-surface-sunken hover:text-neutral-900"
+                  className={
+                    "inline-flex h-9 items-center rounded-input px-4 text-small font-medium transition-colors " +
+                    (p.slug === page?.slug
+                      ? paletteOf(site.theme).navActive
+                      : "text-neutral-600 hover:bg-surface-sunken hover:text-neutral-900")
+                  }
                 >
                   {p.titre}
                 </Link>
@@ -56,14 +63,20 @@ export default async function PublicSitePage({ params }: { params: Promise<{ slu
           </ul>
         </nav>
       )}
-      <BlocList blocs={page?.contenu ?? []} />
+      <BlocList blocs={page?.contenu ?? []} theme={site.theme} />
       {(!page || page.contenu.length === 0) && (
         <p className="px-6 py-24 text-center text-body-lg text-neutral-400">
           Ce site est publié, mais sa page d&apos;accueil est encore vide.
         </p>
       )}
       <footer className="border-t border-neutral-100 py-8 text-center text-small text-neutral-400">
-        {site.nom} · propulsé par Site.mg
+        <span className="inline-flex flex-wrap items-center justify-center gap-2">
+          {site.nom} · propulsé par Site.mg
+          {typeof site.vues === "number" && (
+            <span aria-hidden>·</span>
+          )}
+          <ViewCounter slug={site.slug} />
+        </span>
       </footer>
     </main>
   );
