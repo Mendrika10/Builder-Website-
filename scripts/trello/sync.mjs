@@ -57,12 +57,15 @@ async function main() {
     process.exit(1);
   }
 
-  const data = JSON.parse(readFileSync(join(__dirname, "sprint-data.json"), "utf8"));
+  // Fichier de données paramétrable : npm run trello:sync -- --data=sprint-02-data.json
+  const argData = process.argv.find((a) => a.startsWith("--data="));
+  const dataFile = argData ? argData.slice("--data=".length) : "sprint-data.json";
+  const data = JSON.parse(readFileSync(join(__dirname, dataFile), "utf8"));
   const LIST_ORDER = ["BACKLOG", "READY", "IN PROGRESS", "BLOCKED", "IN REVIEW", "QA", "DONE"];
 
   // 1. Board (idempotent par nom)
   const member = await trello("/members/me");
-  let board = (await trello(`/members/me/boards`, { fields: "name" })).find(
+  let board = (await trello(`/members/me/boards`, { fields: "name,shortUrl" })).find(
     (b) => b.name === data.boardName && !b.closed,
   );
   if (!board) {
@@ -110,7 +113,7 @@ async function main() {
         `Story Owner : ${story.owner}${deps}\n\n` +
         `Acceptance Criteria (story) :\n` +
         story.acceptanceCriteria.map((ac) => `- [ ] ${ac}`).join("\n") +
-        `\n\nSource : docs/backlog/sprint-01.md`;
+        `\n\nSource : ${data.docPath ?? "docs/backlog/sprint-01.md"}`;
       await trello(
         `/cards`,
         {

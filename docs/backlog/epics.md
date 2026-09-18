@@ -5,6 +5,8 @@ Le statut des stories est suivi dans les fichiers de sprint (`sprint-NN.md`).
 
 Statuts possibles : `BACKLOG · READY · IN PROGRESS · BLOCKED · IN REVIEW · QA · DONE`
 
+Sprint courant : [sprint-02.md](sprint-02.md) — Connexion, plans et premier site. Sprint 01 (fondations) : livré.
+
 ---
 
 ## EPIC-01 — Authentication
