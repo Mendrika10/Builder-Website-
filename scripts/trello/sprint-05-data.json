@@ -1,0 +1,123 @@
+{
+  "boardName": "Site.mg — Sprint Board",
+  "sprint": "Sprint 05 — Thèmes, images et analytics",
+  "docPath": "docs/backlog/sprint-05.md",
+  "labels": [
+    "👑 orchestrator",
+    "📋 product-owner",
+    "🏗️ architect",
+    "🎨 ui-art-director",
+    "💻 frontend",
+    "⚙️ backend",
+    "🗄️ database",
+    "🧪 qa",
+    "🔐 security",
+    "🔍 reviewer",
+    "🚀 devops",
+    "📚 documentation"
+  ],
+  "stories": [
+    {
+      "id": "US-060",
+      "title": "Thème de couleur du site",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": ["US-042 (Sprint 03, DONE)"],
+      "tasks": [
+        {
+          "id": "THEME-001",
+          "title": "Migration : theme (varchar 20, défaut indigo) sur Site + accepté dans PATCH /sites/:id",
+          "owner": "🗄️ database",
+          "dependencies": []
+        },
+        {
+          "id": "THEME-002",
+          "title": "Palette de thèmes prédéfinis (5) — variables CSS partagées",
+          "owner": "🎨 ui-art-director",
+          "dependencies": ["THEME-001"]
+        },
+        {
+          "id": "THEME-003",
+          "title": "Éditeur : sélecteur de thème (aperçu immédiat) + application au rendu BlocView",
+          "owner": "💻 frontend",
+          "dependencies": ["THEME-002"]
+        },
+        {
+          "id": "THEME-004",
+          "title": "QA : thème persisté, visible sur la preview ET le site public",
+          "owner": "🧪 qa",
+          "dependencies": ["THEME-003"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "5 thèmes prédéfinis (pas de couleur libre en v1)",
+        "Thème appliqué à la prévisualisation et au site public, persisté",
+        "Thème inconnu rejeté par l'API (validation)"
+      ]
+    },
+    {
+      "id": "US-061",
+      "title": "Upload d'images",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": ["US-051 (Sprint 04, DONE)"],
+      "tasks": [
+        {
+          "id": "IMG-001",
+          "title": "API : POST /uploads (multer mémoire, jpg/png/webp ≤ 2 Mo), service statique /uploads/*",
+          "owner": "⚙️ backend",
+          "dependencies": []
+        },
+        {
+          "id": "IMG-002",
+          "title": "Éditeur : champ image = upload OU URL externe, retour d'URL relative",
+          "owner": "💻 frontend",
+          "dependencies": ["IMG-001"]
+        },
+        {
+          "id": "IMG-003",
+          "title": "QA : upload réel, bloc image avec image uploadée rendu en public",
+          "owner": "🧪 qa",
+          "dependencies": ["IMG-002"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "jpg/png/webp ≤ 2 Mo uniquement (415 sinon) ; nom régénéré (uuid + extension sûre)",
+        "Fichiers servis par l'API, limités au dossier uploads",
+        "Choix entre URL externe et fichier local"
+      ]
+    },
+    {
+      "id": "US-062",
+      "title": "Compteur de vues",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": ["US-040 (Sprint 03, DONE)"],
+      "tasks": [
+        {
+          "id": "VIEW-001",
+          "title": "Migration : vues (int, défaut 0) sur Site + POST /public/sites/:slug/view (increment atomique)",
+          "owner": "⚙️ backend",
+          "dependencies": []
+        },
+        {
+          "id": "VIEW-002",
+          "title": "Page publique : increment au chargement + affichage discret du compteur",
+          "owner": "💻 frontend",
+          "dependencies": ["VIEW-001"]
+        },
+        {
+          "id": "VIEW-003",
+          "title": "Tests e2e : increment, vue publique seulement",
+          "owner": "🧪 qa",
+          "dependencies": ["VIEW-001", "VIEW-002"]
+        }
+      ],
+      "acceptanceCriteria": [
+        "Chaque visite d'une page publique incrémente le compteur du site",
+        "Le compteur n'apparaît que sur le site public",
+        "Increment atomique, 404 si site non publié"
+      ]
+    }
+  ]
+}
