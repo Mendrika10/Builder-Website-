@@ -75,11 +75,11 @@ export default function DashboardPage() {
             <div>
               <h2 className="font-display text-h4 text-neutral-900">Mes sites</h2>
               <p className="mt-2 text-body text-neutral-600">
-                Créez votre premier site dès que la fonctionnalité est disponible.
+                Créez et gérez vos sites depuis votre espace.
               </p>
             </div>
-            <Button className="mt-6 w-full" disabled>
-              Bientôt disponible
+            <Button className="mt-6 w-full" onClick={() => router.push("/dashboard/sites")}>
+              Gérer mes sites
             </Button>
           </Card>
         </div>
