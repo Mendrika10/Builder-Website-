@@ -7,7 +7,7 @@ Dépendances : Sprint 03 ✔ DONE (pages, éditeur, publication, site public).
 
 ---
 
-### US-050 — Multi-pages — `READY`
+### US-050 — Multi-pages — `DONE`
 
 Owner: Backend + Frontend · Dépend de: US-040/041 (✅ Sprint 03)
 
@@ -27,9 +27,11 @@ Owner: Backend + Frontend · Dépend de: US-040/041 (✅ Sprint 03)
 - Le site public expose chaque page sur `/s/<slug>/<page>` avec une navigation cohérente
 - Parcours e2e : 2 pages créées, publiées et visitables en public
 
+**Exécution (PAGE-011→014, PR #15)** : quota max_pages (Gratuit = 5 → 403) ✔ · éditeur multipage (onglets, création, suppression, bascule) ✔ · /s/[slug]/[pageSlug] + navigation ✔ · e2e quota + page publique ✔
+
 ---
 
-### US-051 — Blocs riches (image, contact, horaires) — `READY`
+### US-051 — Blocs riches (image, contact, horaires) — `DONE`
 
 Owner: Backend + Frontend · Dépend de: US-050
 
@@ -48,9 +50,11 @@ Owner: Backend + Frontend · Dépend de: US-050
 - L'éditeur propose les 6 types de blocs avec leurs champs dédiés
 - Le rendu public est fidèle à la prévisualisation et responsive
 
+**Exécution (BLOC-001→004, PR #15)** : sanitization étendue (URL http(s), `javascript:` rejeté) ✔ · champs des 6 blocs dans l'éditeur ✔ · rendu contact cliquable + horaires multi-lignes ✔ · QA live sur la preview ✔
+
 ---
 
-### US-052 — SEO de base du site public — `READY`
+### US-052 — SEO de base du site public — `DONE`
 
 Owner: Frontend · Dépend de: US-050
 
@@ -65,6 +69,14 @@ Owner: Frontend · Dépend de: US-050
 
 - Chaque page publique a un `<title>` et une `meta description` uniques et lisibles
 - Aucune fuite du contenu des sites non publiés (404 → pas de metadata)
+
+**Exécution (SEO-001/002, PR #15)** : generateMetadata sur /s/[slug] et /s/[slug]/[pageSlug] ✔ · meta vérifiées en réel : « Contact · Restaurant Chez Marie » + description dérivée ✔
+
+---
+
+## Bilan Sprint 04
+
+**3/3 stories DONE** — US-050 (multipage) · US-051 (blocs riches) · US-052 (SEO). Goal atteint : un utilisateur construit un site multipage avec du contenu riche et un SEO de base.
 
 ---
 
