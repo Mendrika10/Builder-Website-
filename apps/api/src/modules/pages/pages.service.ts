@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -34,9 +35,22 @@ export class PagesService {
     return site;
   }
 
-  /** PAGE-002 — Création d'une page (slug unique par site). */
+  /** PAGE-002 — Création d'une page (slug unique par site, quota max_pages du plan). */
   async create(userId: string, siteId: string, dto: CreatePageDto): Promise<PublicPage> {
     await this.findOwnedSite(userId, siteId);
+
+    // PAGE-011 — Quota de pages du plan (défaut Gratuit si sans plan)
+    const user = await this.prisma.utilisateur.findUnique({
+      where: { id: userId },
+      include: { plan: true },
+    });
+    const count = await this.prisma.page.count({ where: { idSite: siteId } });
+    const maxPages = user?.plan?.maxPages ?? 5;
+    if (count >= maxPages) {
+      throw new ForbiddenException(
+        `Votre plan ${user?.plan?.nom ?? "Gratuit"} autorise ${maxPages} pages. Passez au plan supérieur pour en créer davantage.`,
+      );
+    }
 
     const baseSlug = slugify(dto.slug ?? dto.titre);
     const slug = await this.uniqueSlug(siteId, baseSlug);
@@ -113,7 +127,7 @@ export class PagesService {
   }
 
   /** PAGE-003 — Vue publique : site publié + pages, sans aucune donnée privée. */
-  async getPublicSite(slug: string) {
+  async getPublicSite(slug: string, pageSlug?: string) {
     const site = await this.prisma.site.findUnique({
       where: { slug },
       include: { pages: { orderBy: [{ ordre: "asc" }, { createdAt: "asc" }] } },
@@ -121,11 +135,14 @@ export class PagesService {
     if (!site || site.statut !== "publie") {
       throw new NotFoundException("Site introuvable.");
     }
-    return {
-      nom: site.nom,
-      slug: site.slug,
-      pages: site.pages.map((p) => ({ titre: p.titre, slug: p.slug, contenu: p.contenu })),
-    };
+    const pages = site.pages.map((p) => ({ titre: p.titre, slug: p.slug, contenu: p.contenu }));
+    if (pageSlug !== undefined) {
+      // PAGE-013 — Une page précise (404 si absente, sans fuite sur les non publiées : tout est public ici)
+      const page = pages.find((p) => p.slug === pageSlug);
+      if (!page) throw new NotFoundException("Page introuvable.");
+      return { nom: site.nom, slug: site.slug, page };
+    }
+    return { nom: site.nom, slug: site.slug, pages };
   }
 
   private async findOwnedPage(userId: string, pageId: string) {

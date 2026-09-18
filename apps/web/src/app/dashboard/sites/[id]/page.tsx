@@ -5,16 +5,38 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 import { BlocEditor } from "@/components/builder/BlocEditor";
 import { BlocList } from "@/components/builder/BlocView";
 import { getSession } from "@/lib/auth";
-import { fetchOrCreateHomePage, publishSite, savePage, type Bloc, type PageData } from "@/lib/pages";
+import {
+  createPage,
+  deletePage,
+  fetchOrCreateHomePage,
+  fetchPages,
+  publishSite,
+  savePage,
+  type Bloc,
+  type PageData,
+} from "@/lib/pages";
 import { fetchSites, type Site } from "@/lib/sites";
+
+const LABELS_BLOC: Record<Bloc["type"], string> = {
+  hero: "Bannière",
+  texte: "Paragraphe",
+  cta: "Appel à l'action",
+  image: "Image",
+  contact: "Contact",
+  horaires: "Horaires",
+};
 
 const NOUVEAUX_BLOCS: Record<Bloc["type"], () => Bloc> = {
   hero: () => ({ type: "hero", titre: "Bienvenue !", sousTitre: "Le meilleur de notre savoir-faire", ctaLabel: "Nous contacter", ctaHref: "#" }),
   texte: () => ({ type: "texte", texte: "Écrivez votre texte ici." }),
   cta: () => ({ type: "cta", titre: "Un projet ?", texte: "Parlez-nous de votre idée.", ctaLabel: "Nous écrire", ctaHref: "#" }),
+  image: () => ({ type: "image", url: "https://picsum.photos/seed/sitemg/1200/600", alt: "Description de l'image" }),
+  contact: () => ({ type: "contact", titre: "Nous contacter", telephone: "+261 34 00 000 00", email: "bonjour@exemple.mg", adresse: "Antananarivo, Madagascar" }),
+  horaires: () => ({ type: "horaires", titre: "Horaires d'ouverture", horaires: "Lundi – Vendredi : 9h – 18h\nSamedi : 9h – 13h\nDimanche : fermé" }),
 };
 
 export default function SiteEditorPage() {
@@ -23,13 +45,17 @@ export default function SiteEditorPage() {
   const siteId = params.id;
 
   const [site, setSite] = useState<Site | null>(null);
-  const [page, setPage] = useState<PageData | null>(null);
+  const [pages, setPages] = useState<PageData[]>([]);
+  const [pageActive, setPageActive] = useState<PageData | null>(null);
   const [blocs, setBlocs] = useState<Bloc[]>([]);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [nouvellePage, setNouvellePage] = useState("");
+  const [creatingPage, setCreatingPage] = useState(false);
+  const [deletingPageId, setDeletingPageId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -40,9 +66,11 @@ export default function SiteEditorPage() {
         return;
       }
       setSite(found);
-      const home = await fetchOrCreateHomePage(siteId);
-      setPage(home);
-      setBlocs(home.contenu ?? []);
+      await fetchOrCreateHomePage(siteId); // garantit qu'il existe au moins une page
+      const list = await fetchPages(siteId);
+      setPages(list);
+      setPageActive(list[0] ?? null);
+      setBlocs(list[0]?.contenu ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Chargement impossible.");
     }
@@ -56,6 +84,14 @@ export default function SiteEditorPage() {
     void load();
   }, [router, load]);
 
+  function switchPage(page: PageData) {
+    setPageActive(page);
+    setBlocs(page.contenu ?? []);
+    setDirty(false);
+    setSaved(false);
+    setError(null);
+  }
+
   function update(blocsSuivants: Bloc[]) {
     setBlocs(blocsSuivants);
     setDirty(true);
@@ -63,12 +99,13 @@ export default function SiteEditorPage() {
   }
 
   async function handleSave() {
-    if (!page) return;
+    if (!pageActive) return;
     setSaving(true);
     setError(null);
     try {
-      const maj = await savePage(page.id, { contenu: blocs });
-      setPage(maj);
+      const maj = await savePage(pageActive.id, { contenu: blocs });
+      setPages((prev) => prev.map((p) => (p.id === maj.id ? maj : p)));
+      setPageActive(maj);
       setBlocs(maj.contenu ?? []);
       setDirty(false);
       setSaved(true);
@@ -93,9 +130,44 @@ export default function SiteEditorPage() {
     }
   }
 
+  async function handleCreatePage(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!nouvellePage.trim()) return;
+    setCreatingPage(true);
+    setError(null);
+    try {
+      const page = await createPage(siteId, nouvellePage.trim());
+      setPages((prev) => [...prev, page]);
+      setNouvellePage("");
+      switchPage(page);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Création de page impossible.");
+    } finally {
+      setCreatingPage(false);
+    }
+  }
+
+  async function handleDeletePage(page: PageData) {
+    // Confirmation en deux clics (pas de window.confirm, rejeté en webview)
+    if (deletingPageId !== page.id) {
+      setDeletingPageId(page.id);
+      return;
+    }
+    setDeletingPageId(null);
+    setError(null);
+    try {
+      await deletePage(page.id);
+      const restantes = pages.filter((p) => p.id !== page.id);
+      setPages(restantes);
+      if (pageActive?.id === page.id) switchPage(restantes[0] ?? null as unknown as PageData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Suppression impossible.");
+    }
+  }
+
   const publie = site?.statut === "publie";
 
-  if (!site || !page) {
+  if (!site || !pageActive) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-surface-page">
         {error ? (
@@ -143,10 +215,51 @@ export default function SiteEditorPage() {
           </p>
         )}
 
+        {/* PAGE-012 — Gestionnaire de pages */}
+        <Card variant="bordered" className="mb-8">
+          <div className="flex flex-wrap items-center gap-2">
+            {pages.map((p) => (
+              <span key={p.id} className="flex items-center gap-1">
+                <Button
+                  variant={pageActive.id === p.id ? "primary" : "secondary"}
+                  size="sm"
+                  onClick={() => switchPage(p)}
+                >
+                  {p.titre}
+                </Button>
+                {pages.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeletePage(p)}
+                    aria-label={`Supprimer la page ${p.titre}`}
+                  >
+                    {deletingPageId === p.id ? "Confirmer ?" : "×"}
+                  </Button>
+                )}
+              </span>
+            ))}
+            <form onSubmit={handleCreatePage} className="ml-auto flex items-end gap-2" noValidate>
+              <div className="w-44">
+                <Input
+                  label="Nouvelle page"
+                  value={nouvellePage}
+                  onChange={(e) => setNouvellePage(e.target.value)}
+                  placeholder="Ex. Menu, Contact…"
+                  maxLength={120}
+                />
+              </div>
+              <Button type="submit" variant="secondary" size="sm" loading={creatingPage}>
+                Ajouter
+              </Button>
+            </form>
+          </div>
+        </Card>
+
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Édition */}
           <section>
-            <h2 className="font-display text-h4 text-neutral-900">Contenu de la page « {page.titre} »</h2>
+            <h2 className="font-display text-h4 text-neutral-900">Contenu de la page « {pageActive.titre} »</h2>
             <div className="mt-4 space-y-4">
               {blocs.map((bloc, i) => (
                 <BlocEditor
@@ -173,7 +286,7 @@ export default function SiteEditorPage() {
                   size="sm"
                   onClick={() => update([...blocs, NOUVEAUX_BLOCS[type]()])}
                 >
-                  + {type === "hero" ? "Bannière" : type === "texte" ? "Paragraphe" : "Appel à l'action"}
+                  + {LABELS_BLOC[type]}
                 </Button>
               ))}
             </div>
