@@ -29,7 +29,7 @@
 | Code frontend / backend | Dev concerné | **Code Reviewer** | Lead du domaine | Orchestrator |
 | Sécurité | Tous | **Security Engineer** | Leads | Tous |
 | Critères « ça marche » | QA | **QA Engineer** | Product Owner | Tous |
-| Merge sur develop | Dev | **Code Reviewer** | Security, QA | Orchestrator |
+| Merge PR feature → preprod | Developer | **Code Reviewer** | Security, QA | Orchestrator |
 | Déploiement, CI | DevOps | **DevOps Engineer** | Leads | Tous |
 
 Règle : **une seule approbation (A) par décision** — jamais de validation en solo par l'auteur (voir [AGENTS.md §4.12](../../../AGENTS.md#412--code-reviewer)).
@@ -47,6 +47,8 @@ QA (validé) → Security (verrouillé) → DevOps (intégré) → DONE
 ```
 
 Chaque handoff exige : la tâche à jour dans `docs/backlog/sprint-NN.md`, les livrables annoncés, et un statut honnête.
+
+Les gates Developer → Reviewer → QA empruntent une **Pull Request** (détails [§9](#9-git--pull-requests--workflow-de-livraison)).
 
 ## 4. Communication
 
@@ -89,6 +91,7 @@ Escalader n'est pas un échec : c'est la procédure normale. Le seul vrai échec
 4. **Travailler dans son rôle** : handoffs par les gates (§3), RACI respecté (§2).
 5. **Déplacer sa carte Trello** à chaque changement de gate (les règles de déplacement sont dans [trello.md](trello.md)).
 6. **Mettre à jour** le sprint et les docs en fin de session — un travail non documenté est un travail non fait.
+7. **Livrer via Git** : branche feature, commits par feature, PR ouverte avant la gate Reviewer ([§9](#9-git--pull-requests--workflow-de-livraison)).
 
 ## 8. Interdits absolus (qualité pro)
 
@@ -102,6 +105,66 @@ Escalader n'est pas un échec : c'est la procédure normale. Le seul vrai échec
 ✗ Garder une information importante pour soi
 ```
 
-## 9. Signature d'équipe
+## 9. Git & Pull Requests — workflow de livraison
+
+> Détail des conventions : [AGENTS.md §11](../../AGENTS.md#11-git-workflow) (branches, Conventional Commits) et [§12](../../AGENTS.md#12-pull-request-workflow) (cycle PR). Ici : comment l'équipe livre, concrètement.
+
+### 9.1 Branches
+
+```text
+main      ← production. Protégée : merge uniquement via PR verte (CI OK)
+preprod   ← intégration. PR feature → preprod, PR preprod → main en fin de sprint
+feature/<carte>   ← une branche par carte Trello (ex. feature/auth-001-register)
+```
+
+**Règles :**
+- Une branche `feature/<id-carte>` par carte — jamais de commit direct sur `preprod`/`main`.
+- `preprod` toujours déployable ; `main` toujours livrable.
+- Fins de sprint : une PR `preprod → main` par sprint (livraison du sprint).
+
+### 9.2 Commits par feature
+
+- **Un commit par carte Trello** (ou par livrable cohérent) — Conventional Commits (AGENTS.md §11) : `feat(auth-001): ...`, `fix: ...`, `docs: ...`.
+- Message focalisé sur le **pourquoi**, carte référencée ; portée = id de carte quand il y en a une.
+- Jamais de secrets, jamais d'artefacts de build (`*.tsbuildinfo`, `dist/`, clients générés) — `.gitignore` fait respecter.
+
+### 9.3 Cycle de livraison d'une carte
+
+```text
+Carte READY → git checkout -b feature/auth-001-register (depuis preprod)
+  → implémentation + commits par feature
+  → push + Pull Request feature/... → preprod
+  → gate Code Reviewer (§4.12) sur la PR        → APPROVED
+  → gate QA (§4.10) sur la PR                    → PASS
+  → merge (squash ou merge commit) → carte DONE
+Fin de sprint : PR preprod → main → CI verte → merge = sprint livré
+```
+
+La PR **remplace le handoff informel** : c'est le support des gates Reviewer/QA, avec la CI obligatoirement verte avant merge.
+
+### 9.4 RACI Git (complète le §2)
+
+| Action | R | A |
+|---|---|---|
+| Branche + commits feature | Developer | — |
+| Ouverture de la PR (description : AC, tests, preuves) | Developer | — |
+| Merge feature → preprod | Code Reviewer approuve, **QA valide** | **Code Reviewer** |
+| Merge preprod → main (fin de sprint) | DevOps prépare | **Product Owner** |
+| Hotfix : branche `hotfix/...` depuis `main`, PR dédiée, puis report sur `preprod` | Developer | **Code Reviewer** |
+
+### 9.5 Interdits Git
+
+```text
+✗ Commit direct sur main ou preprod (tout passe par PR)
+✗ Forcer un push (git push --force) sur une branche partagée
+✗ Merger avec la CI rouge ou sans les gates Reviewer/QA
+✗ Self-merge d'une PR par son auteur
+✗ Un commit « fourre-tout » mélangeant plusieurs cartes
+✗ Committer des secrets (.env, tokens) — voir §22 AGENTS.md
+```
+
+---
+
+## 10. Signature d'équipe
 
 Chaque agent peut faire appel à un autre ; aucun agent ne travaille isolément quand un handoff est requis. L'équipe livre **ensemble** ou n'a rien livré : une fonctionnalité n'est terminée que si PO, Architect, Dev, Reviewer, QA et Security l'ont traversée selon les gates ci-dessus.
