@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import { slugify } from "../../common/slug";
 import { CreateSiteDto } from "./dto/create-site.dto";
 
 /** Site renvoyé par l'API — jamais les paramètres internes complets. */
@@ -49,7 +50,7 @@ export class SitesService {
       );
     }
 
-    const baseSlug = this.slugify(dto.slug ?? dto.nom);
+    const baseSlug = slugify(dto.slug ?? dto.nom);
     const slug = await this.uniqueSlug(baseSlug);
     if (dto.slug && slug !== dto.slug) {
       throw new ConflictException("Ce slug est déjà utilisé. Choisissez-en un autre.");
@@ -97,17 +98,6 @@ export class SitesService {
       throw new NotFoundException("Site introuvable.");
     }
     return site;
-  }
-
-  /** Dérive un slug URL-safe du nom (accents supprimés, minuscules, tirets). */
-  private slugify(input: string): string {
-    return input
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 100) || "mon-site";
   }
 
   /** Garantit l'unicité du slug par suffixe numérique. */

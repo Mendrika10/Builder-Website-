@@ -194,8 +194,29 @@ model Site {
   updatedAt       DateTime   @updatedAt @map("updated_at")
 
   utilisateur Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+  pages       Page[]
 
   @@index([idUtilisateur])
   @@index([statut])
   @@map("site")
+}
+
+// ============================================================
+//  PAGE — une page du site (builder visuel, Sprint 03)
+// ============================================================
+model Page {
+  id          String   @id @default(uuid()) @db.Uuid
+  idSite      String   @db.Uuid @map("id_site")
+  titre       String   @db.VarChar(120)
+  slug        String   @db.VarChar(120)
+  contenu     Json     @default("[]")
+  ordre       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  site Site @relation(fields: [idSite], references: [id], onDelete: Cascade)
+
+  @@unique([idSite, slug])
+  @@index([idSite])
+  @@map("page")
 }
