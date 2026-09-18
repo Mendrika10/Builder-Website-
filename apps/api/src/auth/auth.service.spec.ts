@@ -1,4 +1,5 @@
-import { BadRequestException, ConflictException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { createHash } from "crypto";
 import * as bcrypt from "bcryptjs";
 import { AuthService, TooManyRequestsException } from "./auth.service";
 import type { RegisterDto } from "./dto/register.dto";
@@ -23,20 +24,30 @@ const verification = (over: Record<string, unknown> = {}) => ({
 const prismaMock = {
   utilisateur: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
   emailVerification: { create: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
-  $transaction: jest.fn(),
+  refreshToken: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
+  $transaction: jest.fn(
+    async (arg: unknown[] | ((tx: unknown) => unknown)): Promise<unknown> => {
+      // Les deux formes : tableau de promesses ou fonction interactive
+      if (typeof arg === "function") return arg(prismaMock);
+      return Promise.all(arg);
+    },
+  ),
 };
 const notificationsMock = { sendVerificationCode: jest.fn() };
+const jwtMock = { signAsync: jest.fn(async () => "access-token-test") };
 
-const makeService = () => new AuthService(prismaMock as never, notificationsMock as never);
+const makeService = () =>
+  new AuthService(prismaMock as never, notificationsMock as never, jwtMock as never);
 
 beforeEach(() => {
   jest.clearAllMocks();
-  prismaMock.$transaction.mockImplementation((ops: unknown[]) => Promise.all(ops));
 });
 
 describe("AuthService.register (AUTH-001)", () => {
-  it("crée l'utilisateur, hashe le mot de passe et envoie un code à 6 chiffres", async () => {
-    const service = makeService();
+  it(
+    "crée l'utilisateur, hashe le mot de passe et envoie un code à 6 chiffres",
+    async () => {
+      const service = makeService();
     prismaMock.utilisateur.findUnique.mockResolvedValue(null);
     prismaMock.utilisateur.create.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
       Promise.resolve({ id: "u1", ...data, emailVerifie: false, createdAt: new Date() }),
@@ -60,7 +71,9 @@ describe("AuthService.register (AUTH-001)", () => {
     expect(codeData.code).toMatch(/^\d{6}$/);
     expect(codeData.expiresAt.getTime()).toBeGreaterThan(Date.now());
     expect(notificationsMock.sendVerificationCode).toHaveBeenCalledWith("u@test.mg", codeData.code);
-  });
+    },
+    15_000,
+  );
 
   it("normalise l'email (trim + minuscules)", async () => {
     const service = makeService();
@@ -209,5 +222,101 @@ describe("AuthService.resendCode (AUTH-003)", () => {
     expect(message).toContain("nouveau code");
     expect(prismaMock.emailVerification.create).not.toHaveBeenCalled();
     expect(notificationsMock.sendVerificationCode).not.toHaveBeenCalled();
+  });
+});
+
+describe("AuthService.login / refresh / logout (AUTH-010/011)", () => {
+  const userVerifie = {
+    id: "u1",
+    nom: "T",
+    email: "u@test.mg",
+    emailVerifie: true,
+    motDePasse: "$2a$12$hashfictif",
+    createdAt: new Date(),
+  };
+
+  it("AUTH-010 : login OK émet access + refresh (persisté hashé)", async () => {
+    const service = makeService();
+    prismaMock.utilisateur.findUnique.mockResolvedValue(userVerifie);
+    prismaMock.refreshToken.create.mockResolvedValue({});
+    jest.spyOn(bcrypt, "compare").mockResolvedValue(true as never);
+
+    const result = await service.login({ email: "u@test.mg", motDePasse: "Secret123" });
+
+    expect(result.user.email).toBe("u@test.mg");
+    expect(result.accessToken).toBe("access-token-test");
+    expect(result.refreshToken).toMatch(/^[0-9a-f-]{36}$/);
+    expect(result.expiresIn).toBe(900);
+    const data = prismaMock.refreshToken.create.mock.calls[0][0].data;
+    expect(data.tokenHash).toHaveLength(64); // sha256 hex
+    expect(data.idUtilisateur).toBe("u1");
+  });
+
+  it("AUTH-010 : mot de passe erroné → 401 (anti-énumération)", async () => {
+    const service = makeService();
+    prismaMock.utilisateur.findUnique.mockResolvedValue(userVerifie);
+    jest.spyOn(bcrypt, "compare").mockResolvedValue(false as never);
+
+    await expect(
+      service.login({ email: "u@test.mg", motDePasse: "Wrong123" }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it("AUTH-010 : email inconnu → même 401 (anti-énumération)", async () => {
+    const service = makeService();
+    prismaMock.utilisateur.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.login({ email: "x@mg.mg", motDePasse: "Whatever1" }),
+    ).rejects.toThrow("Email ou mot de passe incorrect");
+  });
+
+  it("AUTH-010 : compte non vérifié → 403", async () => {
+    const service = makeService();
+    prismaMock.utilisateur.findUnique.mockResolvedValue({ ...userVerifie, emailVerifie: false });
+    jest.spyOn(bcrypt, "compare").mockResolvedValue(true as never);
+
+    await expect(
+      service.login({ email: "u@test.mg", motDePasse: "Secret123" }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it("AUTH-011 : refresh valide émet de nouveaux tokens et révoque l'ancien", async () => {
+    const service = makeService();
+    const oldHash = createHash("sha256").update("old-refresh").digest("hex");
+    prismaMock.refreshToken.findUnique.mockResolvedValue({
+      id: "rt1",
+      tokenHash: oldHash,
+      expiresAt: new Date(Date.now() + 60_000),
+      revokedAt: null,
+      utilisateur: userVerifie,
+    });
+    prismaMock.refreshToken.update.mockResolvedValue({});
+
+    const result = await service.refresh("old-refresh");
+
+    expect(result.user.email).toBe("u@test.mg");
+    expect(prismaMock.refreshToken.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "rt1" }, data: expect.anything() }),
+    );
+  });
+
+  it("AUTH-011 : refresh révoqué/expiré/inconnu → 401", async () => {
+    const service = makeService();
+    prismaMock.refreshToken.findUnique.mockResolvedValue(null);
+
+    await expect(service.refresh("garbage")).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prismaMock.refreshToken.update).not.toHaveBeenCalled();
+  });
+
+  it("AUTH-011 : logout révoque le token (updateMany)", async () => {
+    const service = makeService();
+    prismaMock.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+
+    await service.logout("old-refresh");
+
+    expect(prismaMock.refreshToken.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { revokedAt: expect.any(Date) } }),
+    );
   });
 });
