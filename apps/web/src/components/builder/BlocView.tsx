@@ -38,6 +38,56 @@ export function BlocView({ bloc }: { bloc: Bloc }) {
           </a>
         </section>
       );
+    case "image":
+      return (
+        <section className="px-6 py-10">
+          {/* eslint-disable-next-line @next/next/no-img-element -- URL externe fournie par l'utilisateur (v1) */}
+          <img
+            src={bloc.url}
+            alt={bloc.alt ?? ""}
+            className="mx-auto max-h-96 w-full max-w-3xl rounded-card object-cover shadow-resting"
+          />
+          {bloc.alt && <p className="mt-2 text-center text-small text-neutral-500">{bloc.alt}</p>}
+        </section>
+      );
+    case "contact":
+      return (
+        <section className="px-6 py-10">
+          <div className="mx-auto max-w-2xl rounded-card border border-neutral-200 bg-surface-card p-6">
+            <h2 className="font-display text-h3 text-neutral-900">{bloc.titre ?? "Nous contacter"}</h2>
+            <ul className="mt-4 space-y-2 text-body text-neutral-700">
+              {bloc.telephone && (
+                <li>
+                  📞{" "}
+                  <a href={`tel:${bloc.telephone.replace(/\s+/g, "")}`} className="hover:underline">
+                    {bloc.telephone}
+                  </a>
+                </li>
+              )}
+              {bloc.email && (
+                <li>
+                  ✉️{" "}
+                  <a href={`mailto:${bloc.email}`} className="hover:underline">
+                    {bloc.email}
+                  </a>
+                </li>
+              )}
+              {bloc.adresse && <li>📍 {bloc.adresse}</li>}
+            </ul>
+          </div>
+        </section>
+      );
+    case "horaires":
+      return (
+        <section className="px-6 py-10">
+          <div className="mx-auto max-w-2xl rounded-card bg-surface-sunken p-6">
+            <h2 className="font-display text-h3 text-neutral-900">{bloc.titre ?? "Horaires d'ouverture"}</h2>
+            {bloc.horaires && (
+              <p className="mt-3 whitespace-pre-line text-body text-neutral-700">{bloc.horaires}</p>
+            )}
+          </div>
+        </section>
+      );
     default:
       return null;
   }

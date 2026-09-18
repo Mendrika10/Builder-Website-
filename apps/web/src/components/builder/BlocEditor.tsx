@@ -10,6 +10,9 @@ const LABELS: Record<BlocType, string> = {
   hero: "Bannière (hero)",
   texte: "Paragraphe",
   cta: "Appel à l'action",
+  image: "Image",
+  contact: "Contact",
+  horaires: "Horaires",
 };
 
 const FIELDS: Record<BlocType, FieldDef[]> = {
@@ -26,12 +29,29 @@ const FIELDS: Record<BlocType, FieldDef[]> = {
     { key: "ctaLabel", label: "Libellé du bouton" },
     { key: "ctaHref", label: "Lien du bouton" },
   ],
+  image: [
+    { key: "url", label: "URL de l'image (https://…)" },
+    { key: "alt", label: "Description (alt)" },
+  ],
+  contact: [
+    { key: "titre", label: "Titre" },
+    { key: "telephone", label: "Téléphone" },
+    { key: "email", label: "Email" },
+    { key: "adresse", label: "Adresse" },
+  ],
+  horaires: [
+    { key: "titre", label: "Titre" },
+    { key: "horaires", label: "Horaires (une ligne par jour)" },
+  ],
 };
 
 const BADGES: Record<BlocType, string> = {
   hero: "bg-primary-100 text-primary-700",
   texte: "bg-neutral-100 text-neutral-700",
   cta: "bg-primary-100 text-primary-700",
+  image: "bg-neutral-100 text-neutral-700",
+  contact: "bg-primary-100 text-primary-700",
+  horaires: "bg-neutral-100 text-neutral-700",
 };
 
 export function BlocEditor(props: {
