@@ -19,14 +19,14 @@ export class SitesController {
     return this.sitesService.listMine(userId);
   }
 
-  /** SITE-003 — Renommer mon site. */
+  /** SITE-003 — Renommer et/ou changer le thème de mon site. */
   @Patch(":id")
-  rename(
+  update(
     @CurrentUser("sub") userId: string,
     @Param("id", ParseUUIDPipe) siteId: string,
     @Body() dto: UpdateSiteDto,
   ) {
-    return this.sitesService.rename(userId, siteId, dto.nom);
+    return this.sitesService.update(userId, siteId, dto);
   }
 
   /** SITE-003 — Supprimer (archive) mon site. */

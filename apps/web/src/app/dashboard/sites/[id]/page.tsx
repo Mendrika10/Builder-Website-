@@ -16,10 +16,12 @@ import {
   fetchPages,
   publishSite,
   savePage,
+  uploadImage,
   type Bloc,
   type PageData,
 } from "@/lib/pages";
-import { fetchSites, type Site } from "@/lib/sites";
+import { fetchSites, updateSite, type Site } from "@/lib/sites";
+import { PALETTES, THEMES, paletteOf } from "@/lib/themes";
 
 const LABELS_BLOC: Record<Bloc["type"], string> = {
   hero: "Bannière",
@@ -56,6 +58,7 @@ export default function SiteEditorPage() {
   const [nouvellePage, setNouvellePage] = useState("");
   const [creatingPage, setCreatingPage] = useState(false);
   const [deletingPageId, setDeletingPageId] = useState<string | null>(null);
+  const [uploadingFor, setUploadingFor] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -166,6 +169,33 @@ export default function SiteEditorPage() {
   }
 
   const publie = site?.statut === "publie";
+  const palette = paletteOf(site?.theme);
+
+  /** US-060 — Change le thème (persisté immédiatement). */
+  async function handleTheme(theme: string) {
+    if (!site) return;
+    setError(null);
+    try {
+      const maj = await updateSite(site.id, { theme });
+      setSite(maj);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Changement de thème impossible.");
+    }
+  }
+
+  /** US-061 — Upload une image dans le bloc image d'index i. */
+  async function handleUpload(i: number, file: File) {
+    setUploadingFor(i);
+    setError(null);
+    try {
+      const url = await uploadImage(file);
+      update(blocs.map((x, j) => (j === i ? { ...x, url } : x)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload impossible.");
+    } finally {
+      setUploadingFor(null);
+    }
+  }
 
   if (!site || !pageActive) {
     return (
@@ -256,21 +286,62 @@ export default function SiteEditorPage() {
           </div>
         </Card>
 
+        {/* US-060 — Sélecteur de thème */}
+        <Card variant="bordered" className="mb-8">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-small font-medium text-neutral-700">Thème du site :</span>
+            {THEMES.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => handleTheme(t)}
+                className={"flex items-center gap-2 rounded-input border px-3 py-1.5 text-small transition-colors " +
+                  (site?.theme === t
+                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    : "border-neutral-200 bg-surface-card text-neutral-700 hover:bg-surface-sunken")}
+                aria-pressed={site?.theme === t}
+              >
+                <span aria-hidden className={"size-3 rounded-full " + PALETTES[t].swatch} />
+                {PALETTES[t].label}
+              </button>
+            ))}
+          </div>
+        </Card>
+
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Édition */}
           <section>
             <h2 className="font-display text-h4 text-neutral-900">Contenu de la page « {pageActive.titre} »</h2>
             <div className="mt-4 space-y-4">
               {blocs.map((bloc, i) => (
-                <BlocEditor
-                  key={i}
-                  bloc={bloc}
-                  index={i}
-                  total={blocs.length}
-                  onChange={(b) => update(blocs.map((x, j) => (j === i ? b : x)))}
-                  onMove={(dir) => update([...blocs].map((x, j) => (j === i ? blocs[i + dir] : j === i + dir ? blocs[i] : x)))}
-                  onRemove={() => update(blocs.filter((_, j) => j !== i))}
-                />
+                <div key={i}>
+                  <BlocEditor
+                    bloc={bloc}
+                    index={i}
+                    total={blocs.length}
+                    onChange={(b) => update(blocs.map((x, j) => (j === i ? b : x)))}
+                    onMove={(dir) => update([...blocs].map((x, j) => (j === i ? blocs[i + dir] : j === i + dir ? blocs[i] : x)))}
+                    onRemove={() => update(blocs.filter((_, j) => j !== i))}
+                  />
+                  {bloc.type === "image" && (
+                    <div className="mt-2 flex items-center gap-3 rounded-input border border-dashed border-neutral-300 px-3 py-2">
+                      <label className="cursor-pointer text-small font-medium text-primary-600 hover:underline">
+                        {uploadingFor === i ? "Envoi…" : "Téléverser une image"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) void handleUpload(i, f);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                      <span className="text-small text-neutral-400">jpg, png ou webp — 2 Mo max</span>
+                    </div>
+                  )}
+                </div>
               ))}
               {blocs.length === 0 && (
                 <Card variant="flat" className="text-center text-body text-neutral-500">
@@ -296,7 +367,7 @@ export default function SiteEditorPage() {
           <section aria-label="Prévisualisation">
             <h2 className="font-display text-h4 text-neutral-900">Aperçu en direct</h2>
             <div className="mt-4 overflow-hidden rounded-card border border-neutral-200 bg-surface-card shadow-resting">
-              <BlocList blocs={blocs} />
+              <BlocList blocs={blocs} theme={site?.theme} />
               {blocs.length === 0 && (
                 <p className="px-6 py-16 text-center text-body text-neutral-400">L&apos;aperçu apparaîtra ici.</p>
               )}

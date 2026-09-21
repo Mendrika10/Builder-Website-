@@ -186,6 +186,8 @@ model Site {
   domainePerso    String?    @unique @db.VarChar(253) @map("domaine_perso")
   sslActif        Boolean    @default(false) @map("ssl_actif")
   statut          StatutSite @default(brouillon)
+  theme           String     @default("indigo") @db.VarChar(20)
+  vues            Int        @default(0)
   langueDefaut    String     @default("fr") @db.VarChar(10) @map("langue_defaut")
   metaSeo         Json       @default("{}") @map("meta_seo")
   parametres      Json       @default("{}")

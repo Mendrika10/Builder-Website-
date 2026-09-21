@@ -94,10 +94,24 @@ export async function publishSite(siteId: string, publier: boolean): Promise<{ s
 }
 
 /** PAGE-009 — Vue publique d'un site publié (sans authentification). */
-export async function fetchPublicSite(slug: string): Promise<{ nom: string; slug: string; pages: { titre: string; slug: string; contenu: Bloc[] }[] }> {
+export async function fetchPublicSite(slug: string): Promise<{ nom: string; slug: string; theme?: string; vues?: number; pages: { titre: string; slug: string; contenu: Bloc[] }[] }> {
   const res = await fetch(`${API_URL}/public/sites/${slug}`, { cache: "no-store" });
   if (!res.ok) await parseError(res);
-  return (await res.json()) as { nom: string; slug: string; pages: { titre: string; slug: string; contenu: Bloc[] }[] };
+  return (await res.json()) as { nom: string; slug: string; theme?: string; vues?: number; pages: { titre: string; slug: string; contenu: Bloc[] }[] };
+}
+
+/** US-061 — Upload d'une image → URL relative servie par l'API. */
+export async function uploadImage(fichier: File): Promise<string> {
+  const form = new FormData();
+  form.append("fichier", fichier);
+  const res = await fetch(`${API_URL}/uploads`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${getAccessToken() ?? ""}` },
+    body: form,
+  });
+  if (!res.ok) await parseError(res);
+  const data = (await res.json()) as { url: string };
+  return data.url;
 }
 
 /** SEO-001 — Description lisible dérivée du contenu (premier texte trouvé). */

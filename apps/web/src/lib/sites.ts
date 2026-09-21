@@ -6,6 +6,7 @@ export type Site = {
   nom: string;
   slug: string;
   statut: string;
+  theme: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -42,10 +43,15 @@ export async function createSite(nom: string, slug?: string): Promise<Site> {
 }
 
 export async function renameSite(id: string, nom: string): Promise<Site> {
+  return updateSite(id, { nom });
+}
+
+/** US-060 — Change le nom et/ou le thème d'un site. */
+export async function updateSite(id: string, data: { nom?: string; theme?: string }): Promise<Site> {
   const res = await fetch(`${API_URL}/sites/${id}`, {
     method: "PATCH",
     headers: authHeaders(),
-    body: JSON.stringify({ nom }),
+    body: JSON.stringify(data),
   });
   if (!res.ok) await parseError(res);
   return (await res.json()) as Site;

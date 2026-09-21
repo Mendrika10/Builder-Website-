@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BlocList } from "@/components/builder/BlocView";
+import { ViewCounter } from "../ViewCounter";
+import { paletteOf } from "@/lib/themes";
 import { API_URL } from "@/lib/api";
 
 type PublicPage = { titre: string; slug: string; contenu: import("@/lib/pages").Bloc[] };
-type PublicSitePage = { nom: string; slug: string; page: PublicPage };
+type PublicSitePage = { nom: string; slug: string; theme?: string; page: PublicPage };
 type NavSite = { nom: string; slug: string; pages: PublicPage[] };
 
 async function getSitePage(slug: string, pageSlug: string): Promise<PublicSitePage | null> {
@@ -61,7 +63,7 @@ export default async function PublicPagePage({
                 className={
                   "inline-flex h-9 items-center rounded-input px-4 text-small font-medium transition-colors " +
                   (p.slug === data.page.slug
-                    ? "bg-primary-50 text-primary-700"
+                    ? paletteOf(data.theme).navActive
                     : "text-neutral-600 hover:bg-surface-sunken hover:text-neutral-900")
                 }
               >
@@ -71,12 +73,15 @@ export default async function PublicPagePage({
           ))}
         </ul>
       </nav>
-      <BlocList blocs={data.page.contenu} />
+      <BlocList blocs={data.page.contenu} theme={data.theme} />
       {data.page.contenu.length === 0 && (
         <p className="px-6 py-24 text-center text-body-lg text-neutral-400">Cette page est encore vide.</p>
       )}
       <footer className="border-t border-neutral-100 py-8 text-center text-small text-neutral-400">
-        {data.nom} · propulsé par Site.mg
+        <span className="inline-flex flex-wrap items-center justify-center gap-2">
+          {data.nom} · propulsé par Site.mg ·
+          <ViewCounter slug={data.slug} />
+        </span>
       </footer>
     </main>
   );
