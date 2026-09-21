@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import { resoudrePlanEffectif } from "../subscription/plan-effectif";
 import { slugify } from "../../common/slug";
 import { CreateSiteDto } from "./dto/create-site.dto";
 
@@ -35,7 +36,6 @@ export class SitesService {
   async create(userId: string, dto: CreateSiteDto): Promise<PublicSite> {
     const user = await this.prisma.utilisateur.findUnique({
       where: { id: userId },
-      include: { plan: true },
     });
     if (!user) {
       throw new NotFoundException("Utilisateur introuvable.");
@@ -44,10 +44,15 @@ export class SitesService {
     const count = await this.prisma.site.count({
       where: { idUtilisateur: userId, statut: { not: "archive" } },
     });
-    const maxSites = user.plan?.maxSites ?? 1; // sans plan : quota Gratuit par défaut
-    if (count >= maxSites) {
+    // PLAN-001 — le plan effectif suit l'abonnement actif (Sprint 06), sinon le plan du user
+    const plan = (await resoudrePlanEffectif(this.prisma, userId)) ?? {
+      nom: "Gratuit",
+      maxSites: 1,
+      maxPages: 5,
+    };
+    if (count >= plan.maxSites) {
       throw new ForbiddenException(
-        `Votre plan ${user.plan?.nom ?? "Gratuit"} autorise ${maxSites} site${maxSites > 1 ? "s" : ""}. Passez au plan supérieur pour en créer davantage.`,
+        `Votre plan ${plan.nom} autorise ${plan.maxSites} site${plan.maxSites > 1 ? "s" : ""}. Passez au plan supérieur pour en créer davantage.`,
       );
     }
 

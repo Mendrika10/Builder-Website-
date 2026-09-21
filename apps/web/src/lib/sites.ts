@@ -1,5 +1,5 @@
 import { API_URL } from "./api";
-import { getAccessToken } from "./auth";
+import { authHeaders, parseError } from "./http";
 
 export type Site = {
   id: string;
@@ -10,21 +10,6 @@ export type Site = {
   createdAt: string;
   updatedAt: string;
 };
-
-/** En-tête d'authentification (JWT access). */
-function authHeaders(): HeadersInit {
-  const token = getAccessToken();
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-async function parseError(res: Response): Promise<never> {
-  const data: unknown = await res.json().catch(() => null);
-  const raw = (data as { message?: string | string[] } | null)?.message;
-  throw new Error(Array.isArray(raw) ? raw[0] : raw ?? "Une erreur est survenue.");
-}
 
 export async function fetchSites(): Promise<Site[]> {
   const res = await fetch(`${API_URL}/sites`, { headers: authHeaders(), cache: "no-store" });

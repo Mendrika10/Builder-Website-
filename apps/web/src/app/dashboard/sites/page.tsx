@@ -114,7 +114,13 @@ export default function DashboardSitesPage() {
 
         {error && (
           <p role="alert" className="mt-6 rounded-card border border-danger/30 bg-danger/5 px-4 py-3 text-small text-danger">
-            {error}
+            {error}{" "}
+            {/* BILL-001 — les messages de quota proposent l'upgrade */}
+            {/plan/i.test(error) && (
+              <Link href="/dashboard/billing" className="font-semibold underline hover:no-underline">
+                Passer au plan Pro →
+              </Link>
+            )}
           </p>
         )}
 
