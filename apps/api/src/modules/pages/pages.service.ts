@@ -8,7 +8,7 @@ import {
 import type { Prisma } from "../../generated/prisma";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreatePageDto, sanitizeContenu, UpdatePageDto } from "./dto/page.dto";
-import { resoudrePlanEffectif } from "../subscription/plan-effectif";
+import { resoudrePlanEffectif, PLAN_GRATUIT_DEFAUT } from "../subscription/plan-effectif";
 import { slugify } from "../../common/slug";
 
 /** Page renvoyée par l'API (jamais les données internes du site). */
@@ -41,11 +41,7 @@ export class PagesService {
     await this.findOwnedSite(userId, siteId);
 
     // PAGE-011 + PLAN-001 — quota du plan effectif (abonnement actif, sinon plan du user)
-    const plan = (await resoudrePlanEffectif(this.prisma, userId)) ?? {
-      nom: "Gratuit",
-      maxSites: 1,
-      maxPages: 5,
-    };
+    const plan = (await resoudrePlanEffectif(this.prisma, userId)) ?? PLAN_GRATUIT_DEFAUT;
     const count = await this.prisma.page.count({ where: { idSite: siteId } });
     if (count >= plan.maxPages) {
       throw new ForbiddenException(

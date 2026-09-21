@@ -242,6 +242,10 @@ export default function SiteEditorPage() {
             <a href={`/s/${site.slug}`} target="_blank" rel="noopener noreferrer" className="font-medium underline">
               /s/{site.slug}
             </a>
+            {" · "}
+            <Link href={`/dashboard/sites/${siteId}/analytics`} className="font-medium underline">
+              Statistiques
+            </Link>
           </p>
         )}
 

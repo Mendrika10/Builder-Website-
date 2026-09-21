@@ -80,7 +80,7 @@ export default async function PublicPagePage({
       <footer className="border-t border-neutral-100 py-8 text-center text-small text-neutral-400">
         <span className="inline-flex flex-wrap items-center justify-center gap-2">
           {data.nom} · propulsé par Site.mg ·
-          <ViewCounter slug={data.slug} />
+          <ViewCounter slug={data.slug} pageSlug={data.page.slug} />
         </span>
       </footer>
     </main>

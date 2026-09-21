@@ -75,7 +75,7 @@ export default async function PublicSitePage({ params }: { params: Promise<{ slu
           {typeof site.vues === "number" && (
             <span aria-hidden>·</span>
           )}
-          <ViewCounter slug={site.slug} />
+          <ViewCounter slug={site.slug} pageSlug={page.slug} />
         </span>
       </footer>
     </main>

@@ -1,7 +1,20 @@
 import type { PrismaService } from "../../prisma/prisma.service";
 
-/** Quotas minimal requis pour appliquer un plan. */
-export type PlanQuotas = { nom: string; maxSites: number; maxPages: number };
+/** Quotas et fonctionnalités requis pour appliquer un plan. */
+export type PlanEffectif = {
+  nom: string;
+  maxSites: number;
+  maxPages: number;
+  analytics: boolean;
+};
+
+/** Repli quand le user est sans plan (ou inconnu en aval). */
+export const PLAN_GRATUIT_DEFAUT: PlanEffectif = {
+  nom: "Gratuit",
+  maxSites: 1,
+  maxPages: 5,
+  analytics: false,
+};
 
 /**
  * PLAN-001 — Plan effectif de l'utilisateur : l'abonnement actif fait autorité
@@ -11,7 +24,7 @@ export type PlanQuotas = { nom: string; maxSites: number; maxPages: number };
 export async function resoudrePlanEffectif(
   prisma: PrismaService,
   idUtilisateur: string,
-): Promise<PlanQuotas | null> {
+): Promise<PlanEffectif | null> {
   const abonnement = await prisma.abonnement.findFirst({
     where: { idUtilisateur, statut: "actif" },
     orderBy: { dateDebut: "desc" },
@@ -22,6 +35,7 @@ export async function resoudrePlanEffectif(
       nom: abonnement.plan.nom,
       maxSites: abonnement.plan.maxSites,
       maxPages: abonnement.plan.maxPages,
+      analytics: abonnement.plan.analytics,
     };
   }
   const user = await prisma.utilisateur.findUnique({
@@ -33,5 +47,6 @@ export async function resoudrePlanEffectif(
     nom: user.plan?.nom ?? "Gratuit",
     maxSites: user.plan?.maxSites ?? 1,
     maxPages: user.plan?.maxPages ?? 5,
+    analytics: user.plan?.analytics ?? false,
   };
 }

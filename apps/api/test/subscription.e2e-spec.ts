@@ -19,12 +19,12 @@ describe("Subscription Stripe (e2e, STRIPE-002/003/004)", () => {
   const PASSWORD = "Secret123";
 
   beforeAll(async () => {
-    // Environnement sans Stripe : le comportement dégradé est celui documenté
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    // Environnement sans Stripe, APRÈS l'import du module (le client Prisma
+    // recharge le .env local au chargement) : le checkout doit dégrader en 503.
     delete process.env.STRIPE_SECRET_KEY;
     delete process.env.STRIPE_PRICE_PRO;
     delete process.env.STRIPE_WEBHOOK_SECRET;
-
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleRef.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
     await app.init();
