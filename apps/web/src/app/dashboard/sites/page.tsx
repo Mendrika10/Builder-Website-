@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
@@ -108,7 +109,7 @@ export default function DashboardSitesPage() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <h1 className="font-display text-h1 text-neutral-900">Mes sites</h1>
         <p className="mt-2 text-body text-neutral-600">
-          Créez et gérez vos sites — le builder visuel arrive au prochain sprint.
+          Créez et gérez vos sites — éditez vos pages et publiez en un clic.
         </p>
 
         {error && (
@@ -184,6 +185,12 @@ export default function DashboardSitesPage() {
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    <Link
+                      href={`/dashboard/sites/${site.id}`}
+                      className="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-small font-medium text-white hover:bg-primary-700"
+                    >
+                      Éditer
+                    </Link>
                     <Button
                       variant="secondary"
                       size="sm"
