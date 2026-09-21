@@ -7,7 +7,7 @@ Owner des stories : voir tableaux. Dépendances : Sprint 05 ✔ DONE (thèmes, u
 
 ---
 
-### US-070 — Abonnement Stripe (backend) — `READY`
+### US-070 — Abonnement Stripe (backend) — `DONE`
 
 Owner: ⚙️ Backend · Dépend de: Sprint 05 (✅)
 
@@ -18,7 +18,7 @@ Owner: ⚙️ Backend · Dépend de: Sprint 05 (✅)
 | STRIPE-003 | `POST /subscription/checkout` — session Stripe Checkout (price configuré, Plan Pro lié par `STRIPE_PRICE_PRO`), renvoie l'URL de paiement | ⚙️ backend |
 | STRIPE-004 | Webhook `POST /webhooks/stripe` (@Public, signature vérifiée) — `checkout.session.completed` active la souscription Pro | 🔐 security |
 
-### US-071 — Application du plan (backend) — `READY`
+### US-071 — Application du plan (backend) — `DONE`
 
 Owner: 🗄️ Database/Backend · Dépend de: US-070
 
@@ -27,7 +27,7 @@ Owner: 🗄️ Database/Backend · Dépend de: US-070
 | PLAN-001 | L'abonnement actif fait autorité sur les quotas : le service sites lit le plan de l'abonnement actif (fallback : plan du user) | 🗄️ database |
 | PLAN-002 | Tests e2e : état initial Gratuit, checkout 402 sans Stripe configuré, webhook (signature invalide → 400) | 🧪 qa |
 
-### US-072 — Upgrade depuis le quota (frontend) — `READY`
+### US-072 — Upgrade depuis le quota (frontend) — `DONE`
 
 Owner: 💻 Frontend · Dépend de: US-070, US-071
 
