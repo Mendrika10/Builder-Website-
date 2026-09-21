@@ -7,7 +7,7 @@ Dépendances : Sprint 04 ✔ DONE (multipage, blocs riches, SEO).
 
 ---
 
-### US-060 — Thème de couleur du site — `READY`
+### US-060 — Thème de couleur du site — `DONE`
 
 Owner: Backend + Frontend · Dépend de: US-042 (✅ Sprint 03)
 
@@ -28,7 +28,7 @@ Owner: Backend + Frontend · Dépend de: US-042 (✅ Sprint 03)
 
 ---
 
-### US-061 — Upload d'images — `READY`
+### US-061 — Upload d'images — `DONE`
 
 Owner: Backend + Frontend · Dépend de: US-051 (✅ Sprint 04)
 
@@ -48,7 +48,7 @@ Owner: Backend + Frontend · Dépend de: US-051 (✅ Sprint 04)
 
 ---
 
-### US-062 — Compteur de vues — `READY`
+### US-062 — Compteur de vues — `DONE`
 
 Owner: Backend + Frontend · Dépend de: US-040 (✅ Sprint 03)
 
@@ -77,3 +77,19 @@ Owner: Backend + Frontend · Dépend de: US-040 (✅ Sprint 03)
 [ ] Lint valide                         [ ] Documentation à jour
 [ ] Tests passés                        [ ] CI verte sur la PR
 ```
+
+---
+
+## Bilan Sprint 05 — DONE
+
+| Story | Livré |
+|---|---|
+| **US-060** ✅ | 6 palettes de thème (indigo, émeraude, océan, rose, ambre, neutre) — migration `theme`, PATCH site validé, sélecteur dans l'éditeur, preview et site public thématisés (navigation comprise) |
+| **US-061** ✅ | Upload d'images (multer, PNG/JPG/WebP ≤ 5 Mo), servies en statique via `StreamableFile`, champ « Téléverser » dans le bloc image |
+| **US-062** ✅ | Compteur de vues — `POST /public/sites/:slug/view`, incrémenté au chargement des pages publiques, affiché dans l'éditeur |
+
+**Gates** : 60/60 tests API PASS · CI verte (#19, #20) · QA réelle : thème Émeraude appliqué au site de Marie + compteur incrémenté en live.
+**Incident** : le module `src/modules/uploads/` était ignoré par git (pattern `uploads/` non ancré dans `apps/api/.gitignore`) — corrigé en PR #19.
+
+### Livraisons
+- PR #18 planning · PR #19 fix gitignore · PR #20 release `preprod → main`
