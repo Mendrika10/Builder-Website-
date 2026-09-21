@@ -1,4 +1,5 @@
 import { API_URL } from "./api";
+import { authHeaders, parseError } from "./http";
 import { getAccessToken } from "./auth";
 
 /** Blocs supportés par le builder (miroir du sanitizeContenu API). */
@@ -15,21 +16,6 @@ export type PageData = {
   ordre: number;
   updatedAt: string;
 };
-
-/** En-tête d'authentification (JWT access). */
-function authHeaders(): HeadersInit {
-  const token = getAccessToken();
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-async function parseError(res: Response): Promise<never> {
-  const data: unknown = await res.json().catch(() => null);
-  const raw = (data as { message?: string | string[] } | null)?.message;
-  throw new Error(Array.isArray(raw) ? raw[0] : raw ?? "Une erreur est survenue.");
-}
 
 /** PAGE-005 — Récupère (ou crée) la page d'accueil du site. */
 export async function fetchOrCreateHomePage(siteId: string): Promise<PageData> {
