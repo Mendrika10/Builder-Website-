@@ -1,0 +1,135 @@
+{
+  "boardName": "Site.mg — Sprint Board",
+  "sprint": "Sprint 08 — Domaine personnalisé & branding",
+  "docPath": "docs/backlog/sprint-08.md",
+  "labels": [
+    "👑 orchestrator",
+    "📋 product-owner",
+    "🏗️ architect",
+    "🎨 ui-art-director",
+    "💻 frontend",
+    "⚙️ backend",
+    "🗄️ database",
+    "🧪 qa",
+    "🔐 security",
+    "🔍 reviewer",
+    "🚀 devops",
+    "📚 documentation"
+  ],
+  "stories": [
+    {
+      "id": "US-090",
+      "title": "Domaine côté API",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": [
+        "Sprint 07 (DONE)"
+      ],
+      "acceptanceCriteria": [
+        "PATCH accepte domainePerso (normalisé minuscule, sans protocole/chemin)",
+        "403 upsell si le plan effectif n'inclut pas le domaine personnalisé",
+        "null retire le domaine",
+        "POST /sites/:id/domaine/verifier résout le CNAME et met à jour sslActif",
+        "Tests e2e passants"
+      ],
+      "tasks": [
+        {
+          "id": "DOM-001",
+          "title": "DTO domainePerso (normalisation + validation)",
+          "owner": "⚙️ backend",
+          "dependencies": []
+        },
+        {
+          "id": "DOM-002",
+          "title": "Gate plan (403 upsell) + retrait null dans PATCH",
+          "owner": "⚙️ backend",
+          "dependencies": [
+            "DOM-001"
+          ]
+        },
+        {
+          "id": "DOM-003",
+          "title": "POST domaine/verifier — CNAME <slug>.sites.site.mg + sslActif",
+          "owner": "🔐 security",
+          "dependencies": [
+            "DOM-002"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "US-091",
+      "title": "Public sans badge",
+      "status": "READY",
+      "owner": "💻 frontend",
+      "dependsOn": [
+        "US-090"
+      ],
+      "acceptanceCriteria": [
+        "removeBranding exposé dans GET /public/sites/:slug et pages (plan effectif du propriétaire)",
+        "Badge masqué quand removeBranding est vrai",
+        "Tests e2e passants"
+      ],
+      "tasks": [
+        {
+          "id": "BRD-001",
+          "title": "Exposer removeBranding dans les vues publiques",
+          "owner": "⚙️ backend",
+          "dependencies": [
+            "DOM-002"
+          ]
+        },
+        {
+          "id": "BRD-002",
+          "title": "Badge conditionnel sur les 2 pages publiques",
+          "owner": "💻 frontend",
+          "dependencies": [
+            "BRD-001"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "US-092",
+      "title": "Éditeur : section domaine",
+      "status": "READY",
+      "owner": "💻 frontend",
+      "dependsOn": [
+        "US-090"
+      ],
+      "acceptanceCriteria": [
+        "Section domaine : champ, upsell Gratuit, CNAME affiché, bouton Vérifier à 3 états",
+        "QA réelle : enregistrement + vérification en échec propre, badge absent en Pro",
+        "4 tests e2e passants"
+      ],
+      "tasks": [
+        {
+          "id": "DOM-004",
+          "title": "Section domaine dans l'éditeur",
+          "owner": "💻 frontend",
+          "dependencies": [
+            "DOM-003"
+          ]
+        },
+        {
+          "id": "DOM-005",
+          "title": "QA réelle : domaine + badge sur le site de Marie",
+          "owner": "🧪 qa",
+          "dependencies": [
+            "DOM-004",
+            "BRD-002"
+          ]
+        },
+        {
+          "id": "DOM-006",
+          "title": "Tests e2e domaine + branding",
+          "owner": "🧪 qa",
+          "dependencies": [
+            "DOM-003",
+            "BRD-001"
+          ]
+        }
+      ]
+    }
+  ]
+}
