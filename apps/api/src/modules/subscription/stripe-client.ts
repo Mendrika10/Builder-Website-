@@ -1,5 +1,10 @@
 import { ServiceUnavailableException } from "@nestjs/common";
-import Stripe from "stripe";
+import type Stripe from "stripe";
+// Stripe v22 : le module CJS EST le constructeur (pas d'export default
+// consommable après compilation) — on importe le namespace et on le caste.
+import * as StripeNs from "stripe";
+
+const StripeCtor = StripeNs as unknown as new (key: string) => Stripe;
 
 /** Message unique quand Stripe n'est pas configuré sur l'environnement. */
 export const MESSAGE_STRIPE_ABSENT =
@@ -14,6 +19,6 @@ let client: Stripe | null = null;
 export function stripeClient(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new ServiceUnavailableException(MESSAGE_STRIPE_ABSENT);
-  client ??= new Stripe(key);
+  client ??= new StripeCtor(key);
   return client;
 }
