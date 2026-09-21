@@ -1,0 +1,76 @@
+{
+  "boardName": "Site.mg — Sprint Board",
+  "sprint": "Sprint 06 — Monétisation (Stripe)",
+  "docPath": "docs/backlog/sprint-06.md",
+  "labels": [
+    "👑 orchestrator",
+    "📋 product-owner",
+    "🏗️ architect",
+    "🎨 ui-art-director",
+    "💻 frontend",
+    "⚙️ backend",
+    "🗄️ database",
+    "🧪 qa",
+    "🔐 security",
+    "🔍 reviewer",
+    "🚀 devops",
+    "📚 documentation"
+  ],
+  "stories": [
+    {
+      "id": "US-070",
+      "title": "Abonnement Stripe (backend)",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": ["Sprint 05 (DONE)"],
+      "acceptanceCriteria": [
+        "GET /subscription/me renvoie le plan courant et l'état d'abonnement",
+        "POST /subscription/checkout crée une session Stripe Checkout vers le plan Pro (STRIPE_PRICE_PRO) et renvoie l'URL",
+        "Sans clé Stripe configurée : 402 avec message clair (pas de crash)",
+        "Webhook POST /webhooks/stripe vérifie la signature (400 si invalide) et active la souscription sur checkout.session.completed",
+        "Tests e2e passants"
+      ],
+      "tasks": [
+        { "id": "STRIPE-001", "title": "Dépendance stripe + client paresseux + env STRIPE_SECRET_KEY (.env.example)", "owner": "🏗️ architect", "dependencies": [] },
+        { "id": "STRIPE-002", "title": "GET /subscription/me — état de l'abonnement et plan courant", "owner": "⚙️ backend", "dependencies": ["STRIPE-001"] },
+        { "id": "STRIPE-003", "title": "POST /subscription/checkout — session Stripe Checkout vers le plan Pro (STRIPE_PRICE_PRO)", "owner": "⚙️ backend", "dependencies": ["STRIPE-001"] },
+        { "id": "STRIPE-004", "title": "Webhook POST /webhooks/stripe signé — checkout.session.completed active la souscription Pro", "owner": "🔐 security", "dependencies": ["STRIPE-001"] }
+      ]
+    },
+    {
+      "id": "US-071",
+      "title": "Application du plan et quotas",
+      "status": "READY",
+      "owner": "🗄️ database",
+      "dependsOn": ["US-070"],
+      "acceptanceCriteria": [
+        "Le quota sites/pages est calculé depuis l'abonnement actif s'il existe, sinon depuis le plan du user",
+        "Après activation Pro via webhook, l'utilisateur passe de 1 à 3 sites autorisés",
+        "Tests e2e passants"
+      ],
+      "tasks": [
+        { "id": "PLAN-001", "title": "Quotas : l'abonnement actif fait autorité (fallback plan du user)", "owner": "🗄️ database", "dependencies": ["STRIPE-004"] },
+        { "id": "PLAN-002", "title": "Tests e2e subscription : état initial, 402 sans Stripe, webhook signature invalide", "owner": "🧪 qa", "dependencies": ["PLAN-001"] }
+      ]
+    },
+    {
+      "id": "US-072",
+      "title": "Upgrade depuis le quota (frontend)",
+      "status": "READY",
+      "owner": "💻 frontend",
+      "dependsOn": ["US-070", "US-071"],
+      "acceptanceCriteria": [
+        "Le message de quota propose un lien « Passer au plan Pro »",
+        "La page /dashboard/billing affiche le plan courant, l'état d'abonnement et un bouton Payer",
+        "Le retour ?success=1 rafraîchit le plan et affiche un bandeau de confirmation",
+        "QA réelle : parcours quota → billing → checkout (sans clé Stripe → message clair)"
+      ],
+      "tasks": [
+        { "id": "BILL-001", "title": "Message de quota : lien « Passer au plan Pro »", "owner": "💻 frontend", "dependencies": ["STRIPE-003"] },
+        { "id": "BILL-002", "title": "Page /dashboard/billing — plan courant, état, bouton Payer", "owner": "💻 frontend", "dependencies": ["STRIPE-002", "STRIPE-003"] },
+        { "id": "BILL-003", "title": "Retour ?success=1 — rafraîchissement + bandeau de confirmation", "owner": "💻 frontend", "dependencies": ["BILL-002"] },
+        { "id": "BILL-004", "title": "QA réelle : parcours quota → billing → checkout (sans/avec Stripe)", "owner": "🧪 qa", "dependencies": ["BILL-001", "BILL-002", "BILL-003"] }
+      ]
+    }
+  ]
+}
