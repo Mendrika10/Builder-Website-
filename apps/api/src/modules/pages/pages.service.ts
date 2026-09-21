@@ -8,6 +8,7 @@ import {
 import type { Prisma } from "../../generated/prisma";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreatePageDto, sanitizeContenu, UpdatePageDto } from "./dto/page.dto";
+import { resoudrePlanEffectif } from "../subscription/plan-effectif";
 import { slugify } from "../../common/slug";
 
 /** Page renvoyée par l'API (jamais les données internes du site). */
@@ -39,16 +40,16 @@ export class PagesService {
   async create(userId: string, siteId: string, dto: CreatePageDto): Promise<PublicPage> {
     await this.findOwnedSite(userId, siteId);
 
-    // PAGE-011 — Quota de pages du plan (défaut Gratuit si sans plan)
-    const user = await this.prisma.utilisateur.findUnique({
-      where: { id: userId },
-      include: { plan: true },
-    });
+    // PAGE-011 + PLAN-001 — quota du plan effectif (abonnement actif, sinon plan du user)
+    const plan = (await resoudrePlanEffectif(this.prisma, userId)) ?? {
+      nom: "Gratuit",
+      maxSites: 1,
+      maxPages: 5,
+    };
     const count = await this.prisma.page.count({ where: { idSite: siteId } });
-    const maxPages = user?.plan?.maxPages ?? 5;
-    if (count >= maxPages) {
+    if (count >= plan.maxPages) {
       throw new ForbiddenException(
-        `Votre plan ${user?.plan?.nom ?? "Gratuit"} autorise ${maxPages} pages. Passez au plan supérieur pour en créer davantage.`,
+        `Votre plan ${plan.nom} autorise ${plan.maxPages} pages. Passez au plan supérieur pour en créer davantage.`,
       );
     }
 

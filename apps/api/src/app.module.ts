@@ -7,10 +7,11 @@ import { SitesModule } from "./modules/sites/sites.module";
 import { PagesModule } from "./modules/pages/pages.module";
 import { UploadsModule } from "./modules/uploads/uploads.module";
 import { ViewsModule } from "./modules/views/views.module";
+import { SubscriptionModule } from "./modules/subscription/subscription.module";
 import { PrismaModule } from "./prisma/prisma.module";
 
 @Module({
-  imports: [PrismaModule, NotificationsModule, AuthModule, PlansModule, SitesModule, PagesModule, UploadsModule, ViewsModule],
+  imports: [PrismaModule, NotificationsModule, AuthModule, PlansModule, SitesModule, PagesModule, UploadsModule, ViewsModule, SubscriptionModule],
   controllers: [HealthController],
 })
 export class AppModule {}
