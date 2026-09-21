@@ -7,7 +7,7 @@ Owner des stories : voir tableaux. Dépendances : Sprint 06 ✔ DONE (monétisat
 
 ---
 
-### US-080 — Collecte et API analytics (backend) — `READY`
+### US-080 — Collecte et API analytics (backend) — `DONE`
 
 Owner: ⚙️ Backend · Dépend de: Sprint 06 (✅)
 
@@ -17,7 +17,7 @@ Owner: ⚙️ Backend · Dépend de: Sprint 06 (✅)
 | STATS-002 | `POST /public/sites/:slug/view` enrichi : incrément site + vue du jour (upsert atomique) + page optionnelle | ⚙️ backend |
 | STATS-003 | `GET /sites/:id/analytics?days=30` (ownership) : total, série quotidienne, top pages — **403 si plan sans analytics** | ⚙️ backend |
 
-### US-081 — Page analytics (frontend) — `READY`
+### US-081 — Page analytics (frontend) — `DONE`
 
 Owner: 💻 Frontend · Dépend de: US-080
 
@@ -27,7 +27,7 @@ Owner: 💻 Frontend · Dépend de: US-080
 | STATS-005 | Lien « Statistiques » depuis l'éditeur + États : plan sans analytics → upsell Pro ; site sans données → message vide | 💻 frontend |
 | STATS-006 | QA réelle : visites sur le site public de Marie → courbe et top pages à jour ; Gratuit → upsell visible | 🧪 qa |
 
-### US-082 — Tests et clôture — `READY`
+### US-082 — Tests et clôture — `DONE`
 
 Owner: 🧪 QA · Dépend de: US-080, US-081
 
@@ -60,4 +60,4 @@ Owner: 🧪 QA · Dépend de: US-080, US-081
 **Gates** : CI verte (#30→#32) · release `preprod → main` #33.
 
 ### Livraisons
-- PR #30 planning · PR #31 feature analytics · PR #32 bilan — release #33
+- PR #30 planning · PR #31 feature analytics (+ fix lint CI) · PR #32 bilan — release #33
