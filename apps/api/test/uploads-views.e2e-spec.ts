@@ -53,6 +53,12 @@ describe("Uploads, vues et thème (e2e, Sprint 05)", () => {
       .expect(201);
     siteId = site.body.id;
     slug = site.body.slug;
+    // Sprint 07 : les vues sont comptées par page — la page d'accueil est créée ici
+    await request(app.getHttpServer())
+      .post(`/sites/${siteId}/pages`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ titre: "Accueil" })
+      .expect(201);
   });
 
   afterAll(async () => {
@@ -90,7 +96,7 @@ describe("Uploads, vues et thème (e2e, Sprint 05)", () => {
   });
 
   it("VIEW-001 : vues sur site non publié → 404", () => {
-    return request(app.getHttpServer()).post(`/public/sites/${slug}/view`).expect(404);
+    return request(app.getHttpServer()).post(`/public/sites/${slug}/view?page=accueil`).expect(404);
   });
 
   it("VIEW-001 : publication puis 2 visites → compteur incrémenté à 2", async () => {
@@ -100,8 +106,10 @@ describe("Uploads, vues et thème (e2e, Sprint 05)", () => {
       .send({})
       .expect(200);
 
-    await request(app.getHttpServer()).post(`/public/sites/${slug}/view`).expect(201);
-    const second = await request(app.getHttpServer()).post(`/public/sites/${slug}/view`).expect(201);
+    await request(app.getHttpServer()).post(`/public/sites/${slug}/view?page=accueil`).expect(201);
+    const second = await request(app.getHttpServer())
+      .post(`/public/sites/${slug}/view?page=accueil`)
+      .expect(201);
     expect(second.body.vues).toBe(2);
 
     const view = await request(app.getHttpServer()).get(`/public/sites/${slug}`).expect(200);

@@ -4,22 +4,23 @@ import { useEffect, useState } from "react";
 import { API_URL } from "@/lib/api";
 
 /**
- * VIEW-002 — Incrémente les vues du site une fois au montage
- * et affiche le compteur (valeur renvoyée par l'API).
+ * STATS-002 — Incrémente les vues (site + page visitée) une fois au montage
+ * et affiche le compteur global du site (total renvoyé par l'API).
  */
-export function ViewCounter({ slug }: { slug: string }) {
+export function ViewCounter({ slug, pageSlug }: { slug: string; pageSlug?: string }) {
   const [vues, setVues] = useState<number | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${API_URL}/public/sites/${slug}/view`, { method: "POST", signal: controller.signal })
+    const query = pageSlug ? `?page=${encodeURIComponent(pageSlug)}` : "";
+    fetch(`${API_URL}/public/sites/${slug}/view${query}`, { method: "POST", signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { vues: number } | null) => {
         if (data) setVues(data.vues);
       })
       .catch(() => undefined);
     return () => controller.abort();
-  }, [slug]);
+  }, [slug, pageSlug]);
 
   if (vues === null) return null;
   return (
