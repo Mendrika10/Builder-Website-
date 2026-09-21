@@ -1,4 +1,4 @@
-import { Controller, Get, NotFoundException, Param, Post, Query } from "@nestjs/common";
+import { Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { CurrentUser } from "../../auth/current-user.decorator";
 import { Public } from "../../auth/public.decorator";
 import { AnalyticsService } from "./analytics.service";
