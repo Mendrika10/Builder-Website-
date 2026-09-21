@@ -1,8 +1,10 @@
 import { ServiceUnavailableException } from "@nestjs/common";
 import type Stripe from "stripe";
-// Stripe v22 : le module CJS EST le constructeur (pas d'export default) —
-// on le récupère donc tel quel, typé comme le constructeur du package.
-const StripeCtor = require("stripe") as typeof import("stripe");
+// Stripe v22 : le module CJS EST le constructeur (pas d'export default
+// consommable après compilation) — on importe le namespace et on le caste.
+import * as StripeNs from "stripe";
+
+const StripeCtor = StripeNs as unknown as new (key: string) => Stripe;
 
 /** Message unique quand Stripe n'est pas configuré sur l'environnement. */
 export const MESSAGE_STRIPE_ABSENT =
