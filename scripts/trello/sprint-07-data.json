@@ -1,0 +1,138 @@
+{
+  "boardName": "Site.mg — Sprint Board",
+  "sprint": "Sprint 07 — Analytics par site",
+  "docPath": "docs/backlog/sprint-07.md",
+  "labels": [
+    "👑 orchestrator",
+    "📋 product-owner",
+    "🏗️ architect",
+    "🎨 ui-art-director",
+    "💻 frontend",
+    "⚙️ backend",
+    "🗄️ database",
+    "🧪 qa",
+    "🔐 security",
+    "🔍 reviewer",
+    "🚀 devops",
+    "📚 documentation"
+  ],
+  "stories": [
+    {
+      "id": "US-080",
+      "title": "Collecte et API analytics (backend)",
+      "status": "READY",
+      "owner": "⚙️ backend",
+      "dependsOn": [
+        "Sprint 06 (DONE)"
+      ],
+      "acceptanceCriteria": [
+        "POST view incrémente site + vue du jour (upsert) + page optionnelle",
+        "GET /sites/:id/analytics renvoie total, série quotidienne, top pages",
+        "403 avec message upsell si le plan effectif n'inclut pas analytics",
+        "404 si le site n'appartient pas à l'utilisateur",
+        "Tests e2e passants"
+      ],
+      "tasks": [
+        {
+          "id": "STATS-001",
+          "title": "Migration page_view_daily + compteur vues sur Page",
+          "owner": "🗄️ database",
+          "dependencies": []
+        },
+        {
+          "id": "STATS-002",
+          "title": "POST view enrichi : upsert quotidien + vue page",
+          "owner": "⚙️ backend",
+          "dependencies": [
+            "STATS-001"
+          ]
+        },
+        {
+          "id": "STATS-003",
+          "title": "GET /sites/:id/analytics gated par plan (403 Gratuit)",
+          "owner": "⚙️ backend",
+          "dependencies": [
+            "STATS-001"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "US-081",
+      "title": "Page analytics (frontend)",
+      "status": "READY",
+      "owner": "💻 frontend",
+      "dependsOn": [
+        "US-080"
+      ],
+      "acceptanceCriteria": [
+        "La page analytics affiche totaux, graphique 30 jours et top pages",
+        "Gratuit → upsell Pro au lieu des données",
+        "Lien « Statistiques » présent dans l'éditeur",
+        "QA réelle : visites sur site public → données à jour"
+      ],
+      "tasks": [
+        {
+          "id": "STATS-004",
+          "title": "lib/analytics.ts + page analytics avec chart SVG",
+          "owner": "💻 frontend",
+          "dependencies": [
+            "STATS-003"
+          ]
+        },
+        {
+          "id": "STATS-005",
+          "title": "Lien éditeur + états upsell/vide",
+          "owner": "💻 frontend",
+          "dependencies": [
+            "STATS-004"
+          ]
+        },
+        {
+          "id": "STATS-006",
+          "title": "QA réelle : visites → chart à jour ; Gratuit → upsell",
+          "owner": "🧪 qa",
+          "dependencies": [
+            "STATS-004",
+            "STATS-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "US-082",
+      "title": "Tests et clôture",
+      "status": "READY",
+      "owner": "🧪 qa",
+      "dependsOn": [
+        "US-080",
+        "US-081"
+      ],
+      "acceptanceCriteria": [
+        "4 tests e2e analytics passants",
+        "Suite complète verte en CI",
+        "Sprint doc et Trello à jour",
+        "Release main fusionnée"
+      ],
+      "tasks": [
+        {
+          "id": "STATS-007",
+          "title": "Tests e2e analytics (403/Pro/404/upsert)",
+          "owner": "🧪 qa",
+          "dependencies": [
+            "STATS-003"
+          ]
+        },
+        {
+          "id": "STATS-008",
+          "title": "Bilan sprint doc + Trello + release main",
+          "owner": "📚 documentation",
+          "dependencies": [
+            "STATS-006",
+            "STATS-007"
+          ]
+        }
+      ]
+    }
+  ]
+}
